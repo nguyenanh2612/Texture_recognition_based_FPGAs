@@ -17,24 +17,32 @@ I.Lý thuyết
             + Học máy (Machine Learning): Các phương pháp truyền thống như Support Vector Machines (SVM), cây quyết định (decision trees) và k-nearest neighbors (k-NN) thường được sử dụng để phân loại dựa trên các đặc trưng kết cấu. 
             + Học sâu (Deep Learning): Mạng nơ-ron tích chập (CNN) ngày càng trở nên phổ biến do khả năng tự động học các đặc trưng kết cấu và thực hiện cả phân loại và nhận diện.
     3) Phân loại
-        Nhận diện kết cấu có thể được phân loại thành nhiều loại khác nhau dựa trên các tiêu chí khác nhau, bao gồm phương pháp trích xuất đặc trưng, bối cảnh ứng dụng và các thuật toán cụ thể được sử dụng. Dưới đây là một số loại nhận diện kết cấu phổ biến:
+        Nhận diện kết cấu có thể được phân loại thành nhiều loại khác nhau dựa trên các tiêu chí khác nhau, bao gồm phương pháp trích xuất đặc trưng, 
+        bối cảnh ứng dụng và các thuật toán cụ thể được sử dụng. Dưới đây là một số loại nhận diện kết cấu phổ biến:
         a) Phương pháp Thống kê (Statistical methods)
-        Các phương pháp này phân tích phân phối độ sáng của các pixel để trích xuất các đặc trưng kết cấu. Các kỹ thuật như Ma trận đồng xuất hiện mức xám (GLCM) và Đo lường năng lượng kết cấu của Laws là những ví dụ. Chúng tập trung vào các thuộc tính thống kê như độ tương phản, đồng nhất và entropy.
+        Các phương pháp này phân tích phân phối độ sáng của các pixel để trích xuất các đặc trưng kết cấu. Các kỹ thuật như Ma trận đồng xuất hiện mức xám (GLCM) và Đo lường năng lượng kết cấu của Laws là những ví dụ. 
+        Chúng tập trung vào các thuộc tính thống kê như độ tương phản, đồng nhất và entropy.
         b) Phương pháp Cấu trúc (Structural methods)
-        Các phương pháp cấu trúc tập trung vào việc xác định và mô tả các mẫu được hình thành bởi các pixel. Chúng phân tích sự sắp xếp hình học của các yếu tố trong kết cấu. Các kỹ thuật bao gồm việc sử dụng bộ phát hiện hình dạng và cạnh, giúp nắm bắt các đặc điểm cụ thể như đường thẳng, góc và kết cấu được hình thành bởi sự sắp xếp của chúng.
+        Các phương pháp cấu trúc tập trung vào việc xác định và mô tả các mẫu được hình thành bởi các pixel. Chúng phân tích sự sắp xếp hình học của các yếu tố trong kết cấu. 
+        Các kỹ thuật bao gồm việc sử dụng bộ phát hiện hình dạng và cạnh, giúp nắm bắt các đặc điểm cụ thể như đường thẳng, góc và kết cấu được hình thành bởi sự sắp xếp của chúng.
         c) Phương pháp Dựa trên Mô hình (Model-based methods)
-        Các phương pháp này sử dụng các mô hình toán học để mô tả các kết cấu. Ví dụ, bộ lọc Gabor và biến đổi wavelet được sử dụng để nắm bắt các đặc trưng kết cấu ở nhiều quy mô và hướng khác nhau. Chúng hiệu quả trong việc xác định các kết cấu có mẫu cụ thể, làm cho chúng hữu ích trong các ứng dụng như nhận diện khuôn mặt và phân tích cảnh.
+        Các phương pháp này sử dụng các mô hình toán học để mô tả các kết cấu. Ví dụ, bộ lọc Gabor và biến đổi wavelet được sử dụng để nắm bắt các đặc trưng kết cấu ở nhiều quy mô và hướng khác nhau. 
+        Chúng hiệu quả trong việc xác định các kết cấu có mẫu cụ thể, làm cho chúng hữu ích trong các ứng dụng như nhận diện khuôn mặt và phân tích cảnh.
         d) Phương pháp Biến đổi (Transform-based methods)
         Các phương pháp này liên quan đến việc biến đổi dữ liệu kết cấu sang miền khác để phân tích. Biến đổi Fourier và Biến đổi Wavelet cho phép phân tích các kết cấu trong miền tần số, giúp dễ dàng nhận diện các cấu trúc và mẫu định kỳ.
         e) Phương pháp Học Sâu (Deep Learning)
-        Những tiến bộ gần đây trong học sâu đã dẫn đến sự phát triển của các mạng nơ-ron tích chập (CNN) cho nhận diện kết cấu. Các mô hình này tự động học cách trích xuất các đặc trưng liên quan từ hình ảnh, cải thiện đáng kể độ chính xác và hiệu suất nhận diện. Phương pháp này được sử dụng rộng rãi trong các ứng dụng từ phân loại hình ảnh đến phát hiện kết cấu theo thời gian thực trong video.
+        Những tiến bộ gần đây trong học sâu đã dẫn đến sự phát triển của các mạng nơ-ron tích chập (CNN) cho nhận diện kết cấu. Các mô hình này tự động học cách trích xuất các đặc trưng liên quan từ hình ảnh, 
+        cải thiện đáng kể độ chính xác và hiệu suất nhận diện. Phương pháp này được sử dụng rộng rãi trong các ứng dụng từ phân loại hình ảnh đến phát hiện kết cấu theo thời gian thực trong video.
         f) Phương pháp Bối cảnh (Contextual Methods)
-        Các phương pháp này xem xét sự sắp xếp không gian của các kết cấu trong một hình ảnh và cách mà các kết cấu tương tác với nhau. Chúng thường sử dụng các kỹ thuật như Trường ngẫu nhiên Markov (MRF) để mô hình hóa sự phụ thuộc giữa các pixel lân cận, cho phép nhận diện tốt hơn trong các hình ảnh phức tạp.
+        Các phương pháp này xem xét sự sắp xếp không gian của các kết cấu trong một hình ảnh và cách mà các kết cấu tương tác với nhau. Chúng thường sử dụng các kỹ thuật như Trường ngẫu nhiên Markov (MRF) để mô hình hóa sự phụ thuộc giữa các pixel lân cận, 
+        cho phép nhận diện tốt hơn trong các hình ảnh phức tạp.
     4) Ví dụ điển hình của mỗi loại
         a) Statistical Methods:
-        Sử dụng GLCM để phân tích ảnh MRI hoặc siêu âm nhằm phát hiện sự khác biệt giữa các loại mô, như phân biệt giữa mô lành tính và mô ung thư. Các đặc trưng như độ tương phản và đồng nhất có thể giúp bác sĩ đưa ra chẩn đoán chính xác hơn.
+        Sử dụng GLCM để phân tích ảnh MRI hoặc siêu âm nhằm phát hiện sự khác biệt giữa các loại mô, như phân biệt giữa mô lành tính và mô ung thư. 
+        Các đặc trưng như độ tương phản và đồng nhất có thể giúp bác sĩ đưa ra chẩn đoán chính xác hơn.
         b) Structural Methods:
-        Nhận diện các kiểu kết cấu trong ảnh vệ tinh. Sử dụng bộ phát hiện hình dạng như Canny hoặc Sobel để xác định các đặc điểm địa hình, như sông, núi, hoặc các khu vực đô thị. Các kỹ thuật này giúp phân tích cấu trúc không gian của cảnh và hỗ trợ trong quy hoạch đô thị.
+        Nhận diện các kiểu kết cấu trong ảnh vệ tinh. Sử dụng bộ phát hiện hình dạng như Canny hoặc Sobel để xác định các đặc điểm địa hình, như sông, núi, hoặc các khu vực đô thị. 
+        Các kỹ thuật này giúp phân tích cấu trúc không gian của cảnh và hỗ trợ trong quy hoạch đô thị.
         c) Model-based Methods: 
         Nhận diện khuôn mặt trong hệ thống an ninh. Sử dụng bộ lọc Gabor để nắm bắt các đặc trưng kết cấu ở nhiều quy mô và hướng khác nhau, cho phép phát hiện khuôn mặt trong ảnh hoặc video với độ chính xác cao. Điều này rất quan trọng trong các ứng dụng nhận diện khuôn mặt trong camera giám sát.
         d) Transform-based Methods:
