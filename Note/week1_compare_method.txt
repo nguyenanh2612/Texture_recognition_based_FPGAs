@@ -1,0 +1,54 @@
+COMPARING THE METHODS
+
+I. Định nghĩa của các method được sử dụng 
+    1. Phương pháp thống kê (Statistical methods):
+    + GLCM (Gray Level Co-occurrence Matrix): Đo lường tần suất các cặp pixel có các giá trị độ sáng cụ thể xuất hiện liền kề nhau. 
+                                              Từ đó, tính toán các tính chất như độ tương phản, entropy và tương quan.
+    + GLRLM (Gray Level Run Length Matrix): Đo lường các chuỗi các pixel có cùng giá trị độ sáng theo một hướng nhất định.
+    2. Phương pháp cấu trúc (Structural methods):
+    + Phân tích cấu trúc địa phương: Xác định các mẫu lặp lại như đường kẻ, hình vuông hoặc hình tam giác trong một ảnh.
+    + Autocorrelation: Đo lường mức độ tương tự của ảnh tại các khoảng cách khác nhau.
+    3. Phương pháp dựa trên mô hình (Model-based methods):
+    + Fractal: Sử dụng các mẫu hình lặp lại ở các mức độ khác nhau để nắm bắt tính chất kết cấu của ảnh.
+    + Bộ lọc Gabor: Sử dụng bộ lọc tuyến tính dựa trên hàm điều hòa để nắm bắt các tính chất kết cấu của ảnh.
+    + Wavelets: Phân tích ảnh trong miền tần số và không gian để nắm bắt các đặc trưng kết cấu.
+    4. Phương pháp biến đổi (Transform-based methods):
+    + Biến đổi Fourier: Phân tích các thành phần tần số của ảnh để trích xuất các đặc trưng kết cấu.
+    + Biến đổi Wavelet: Phân tích ảnh trong cả miền tần số và không gian, cho phép trích xuất thông tin kết cấu ở nhiều mức độ chi tiết khác nhau.
+
+II. Chi tiết các method
+    1. GLCM (ref: GLCM_FPGA + GLCM_FPGA_1)
+    a) Lý thuyết
+        Có thể hiểu GLCM là một phương pháp thể hiện mối quan hệ giữa cá giá trị trên 1 không gian góc và khoảng cách của một bức ảnh hoặc vùng ảnh 
+        cụ thể (kích thước xác định MxN). Hoặc được định nghĩa trên một hình ảnh là phân phối các giá trị đồng hiện tại một độ lệch nhất định. 
+        GLCM được tạo ra từ gray-scale image. 
+
+        ------------------------------------------------------------------Gray-scale image-------------------------------------------------------------------
+        -- Đinh nghĩa
+            Ảnh thang độ xám (grayscale image) là ảnh chỉ có một kênh màu duy nhất, và mọi pixel trong ảnh đều có một giá trị cường độ từ 0 đến 255, 
+            thay vì ba kênh màu đỏ, xanh lá, và xanh dương như ảnh màu.
+        -- Đặc Điểm Của Ảnh Thang Độ Xám:
+            Cường Độ Sáng: Mỗi pixel trong ảnh thang độ xám đại diện cho một giá trị cường độ sáng, thường từ 0 (đen hoàn toàn) đến 255 (trắng hoàn toàn).
+            Không Màu: Ảnh thang độ xám không chứa thông tin màu sắc, chỉ có các mức độ sáng khác nhau.
+            Dễ Xử Lý: Ảnh thang độ xám thường dễ xử lý hơn ảnh màu do chỉ có một kênh dữ liệu thay vì ba kênh (RGB).
+        --Quy Trình Chuyển Đổi Ảnh Màu Sang Ảnh Thang Độ Xám:
+            Trung Bình Cộng: Lấy giá trị trung bình của ba kênh màu RGB
+        ----------------------------------------------------------------------------------------------------------------------------------------------------
+
+        GLCM chứa thông tin về tần suất một pixel có giá trị mức xám (cường độ thang độ xám hoặc Tone) i xuất hiện theo chiều ngang, 
+        chiều dọc hoặc theo đường chéo so với các pixel liền kề có giá trị j. Trong đó i & j là các giá trị mức xám (tông màu) trong một hình ảnh.
+    b) Phương pháp tính toán và trích xuất ra GLCM matrix
+        Haralick đã trích xuất nhiều thuộc tính hoặc tính năng từ GLCM. Để trích xuất các tính năng Haralick, GLCM phải là một 
+        ma trận đối xứng và chuẩn hóa. Để tạo một ma trận đối xứng, chúng ta phải lấy chuyển vị của GLCM và cộng nó với 
+        GLCM gốc. Để có được một ma trận chuẩn hóa, hãy tính tổng của tất cả các phần tử trong GLCM và chia mỗi phần tử của 
+        ma trận với tổng thu được. Từ các tính năng kết cấu GLCM đối xứng được chuẩn hóa được trích xuất.
+
+        Đầu tiên: ta chuyển hình ảnh thành grayscale image => size của co-occurrence matrix = 2 ^ n X 2 ^ n với n là số bit miêu tả giá trị độ sáng => 
+        size của co-occurrence matric không phụ thuộc vào size của image mà phụ thuộc data bit của mỗi pixel thể hiện độ sáng 
+
+        Kiểm tra mỗi cặp pixel liền kề nhau với khoảng cách d = 2 với cặp vị trí (i,j) = (image(i,j),image(i,j+d)) (có tính đối xứng)
+    c) Accelerator 
+        Nếu tính từng co-occurrence matric sẽ tốn rất nhiều clock => tính toán xong xong cả 4 hướng 0,45,90,135 co-occurrence matrix => ghi vào memory
+
+    2. Gabor filter
+    

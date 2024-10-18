@@ -5,6 +5,7 @@ I.Lý thuyết
         Nhận diện kết cấu (Texture Recognition) là một quá trình trong xử lý hình ảnh và thị giác máy tính, 
     với mục tiêu là xác định và phân loại các kết cấu trong hình ảnh. Đây là một nhiệm vụ tổng quát hơn so với phân loại kết cấu, 
     vì nó không chỉ liên quan đến việc phân loại kết cấu vào các lớp đã được xác định trước mà còn yêu cầu nhận diện các mẫu kết cấu cụ thể và các đặc điểm của chúng, ngay cả khi chúng không thuộc về một danh mục đã biết.
+    Có thể hiểu Texture recognition chính là bước đầu tiên Feature Extraction. 
     2. Các thành phần chính  
     a) Trích xuất Đặc trưng (Feature Extraction)
         Bước đầu tiên liên quan đến việc trích xuất các đặc trưng kết cấu từ hình ảnh. Các kỹ thuật phổ biến bao gồm:
