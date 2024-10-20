@@ -49,6 +49,35 @@ II. Chi tiết các method
         Kiểm tra mỗi cặp pixel liền kề nhau với khoảng cách d = 2 với cặp vị trí (i,j) = (image(i,j),image(i,j+d)) (có tính đối xứng)
     c) Accelerator 
         Nếu tính từng co-occurrence matric sẽ tốn rất nhiều clock => tính toán xong xong cả 4 hướng 0,45,90,135 co-occurrence matrix => ghi vào memory
-
+        latency = 32200, F = 100MHz, GLCM size = 256x256, image size = 128x128
     2. Gabor filter
-    
+    a) Lý thuyết 
+        Gabor filter (Bộ lọc Gabor) là một công cụ mạnh mẽ trong việc xử lý ảnh, đặc biệt là nhận dạng texture (cấu trúc bề mặt). 
+        Nó được phát triển dựa trên nguyên lý của con người trong việc nhận diện các mẫu (pattern recognition) bằng cách bắt chước cơ chế hoạt động của mắt và hệ thần kinh thị giác. 
+        Gabor filter hoạt động như một bộ lọc tần số không gian, giúp phát hiện các thông tin về cạnh, tần số và hướng trong một hình ảnh.
+    b) Công thức toán học 
+        Bộ lọc Gabor là một hàm toán học kết hợp giữa một hàm Gaussian và một sóng sin điều hòa, thể hiện trong cả không gian tần số và không gian không gian. 
+        Hàm Gabor 2D có thể được biểu diễn dưới dạng: 
+            G(x,y;λ,θ,ψ,σ,γ)=exp(− (x'^2 + γ^2.y'^2)/(2σ^2)) . cos(2π.x'/λ+ψ)
+        Trong đó:
+        + x′ và 𝑦′ là các tọa độ sau khi xoay ảnh theo hướng 
+        + λ là bước sóng của sóng điều hòa,
+        + θ là hướng của bộ lọc,
+        + ψ là pha của sóng sin,
+        + σ là độ lệch chuẩn của hàm Gaussian (quy định độ rộng của bộ lọc),
+        + γ là tỷ lệ khía cạnh (aspect ratio), quy định sự kéo dài của bộ lọc theo một hướng.
+    c) Đặc điểm
+        + Nhạy cảm với hướng và tần số: Gabor filter có thể được điều chỉnh theo nhiều hướng và tần số khác nhau, giúp nó phân tích và nhận diện các texture có cấu trúc phức tạp.
+        + Tính địa phương: Gabor filter là bộ lọc cục bộ, chỉ phân tích các mẫu nhỏ của ảnh, giúp phân biệt các cấu trúc nhỏ trong texture.
+        + Bộ lọc đa quy mô (multi-scale): Nhiều bộ lọc Gabor có thể được sử dụng với các tần số khác nhau để nhận diện texture ở các mức độ chi tiết khác nhau.
+    d) Hệ thống trên FPGA
+        Thực thi Gabor filter trên FPGA bao gồm việc thiết kế các module phần cứng thực hiện các phép tính liên quan đến bộ lọc. Các bước chính bao gồm:
+            + Thiết kế module tính toán hàm Gaussian.
+            + Thiết kế module tính toán sóng sin.
+            + Module tích hợp các thành phần trên để thực hiện phép nhân và cộng theo công thức của bộ lọc Gabor
+        Các bước chính trong thiết kế FPGA: 
+            + Input/Output: Hình ảnh đầu vào được lưu trữ dưới dạng ma trận pixel và được xử lý qua bộ lọc. Output sẽ là ma trận đã qua Gabor filter, giúp thể hiện texture rõ ràng hơn.
+            + Sử dụng DSP blocks: FPGA có các khối tính toán DSP (Digital Signal Processing) rất hiệu quả để thực hiện các phép nhân và cộng phức tạp, điều này phù hợp với việc tính toán hàm Gaussian và sin. 
+            + Pipeline: Thiết kế FPGA cần được phân chia thành nhiều giai đoạn (pipeline) để tối ưu tốc độ xử lý. Mỗi giai đoạn của pipeline sẽ thực hiện một phần nhỏ của phép tính (ví dụ: tính toán Gaussian trước, sau đó sóng sin).
+            + Tối ưu bộ nhớ: Các hệ số của bộ lọc Gabor có thể được lưu trữ trước trong các block RAM của FPGA để giảm thiểu việc tính toán lặp lại và tăng tốc độ xử lý.
+        
