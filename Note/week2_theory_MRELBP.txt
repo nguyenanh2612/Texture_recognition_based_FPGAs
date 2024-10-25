@@ -24,6 +24,80 @@ II. Texture Extraction
     khắc phục được nhược điểm nhạy cảm với độ mờ và nhiễu của ảnh, không nắm bắt được cấu trúc vĩ mô kết cấu và 
     tính đa chiều của đặc điểm.
         + Ngoài ra các biến thể trên có một nhược điểm đó chính là nhạy cảm với độ mờ và nhiễu của ảnh tính đa chiều của ảnh dẫn đến khả năng phức tạp trong tính toán. 
+    Dựa theo công thức tính toán ta có thể suy ra các khổi lớn của MRELB như sau: 
+
+
+                                                  |--------------------------------------------> MRELBP_CI  -------|
+                                                  |                                                                |
+        input ------> median processing --------->|                                                                |
+                                                  |                                                                |
+                                                  |---------------> interpolation |------------> MRELBP_NI ---------> joint historam -> outputf
+                                                                                  |                                |         
+                                                                                  |                                |
+                                                                                  |------------> MRELBP_RD---------|
+
+        median: qua các filter trung vị để xử lý nhiễu (non-linear) => thuật toán LBP xử lý trên các mảng
+            -> MRELBP_CI: + median filter 3x3 => Bộ lọc trung vị với kích thước 3x3 giúp làm mượt ảnh và loại bỏ nhiễu cục bộ (local noise) trong một phạm vi nhỏ xung quanh pixel trung tâm
+                          + Kích thước 3x3 đủ để đảm bảo việc làm mượt trong một phạm vi rất cục bộ, giúp CI có được giá trị cường độ đã qua xử lý mà không bị ảnh hưởng bởi các biến đổi lớn hơn trong hình ảnh. 
+            -> MRELBP_NI: + median filter 5x5.7x7,9x9:  liên quan đến việc nắm bắt các đặc trưng kết cấu của một vùng lớn hơn quanh pixel trung tâm, do đó cần phải xử lý trên các vùng rộng hơn so với CI. 
+                            Việc này đòi hỏi bộ lọc trung vị có kích thước lớn hơn để làm mượt và loại bỏ nhiễu trong các vùng lớn hơn.
+                          + NI mô tả cường độ sáng trung bình của các pixel lân cận, vì vậy nó yêu cầu thông tin từ một vùng rộng hơn để đảm bảo tính chính xác khi phản ánh mối quan hệ giữa điểm trung tâm 
+                            và các điểm xung quanh.
+                          + Sử dụng bộ lọc trung vị có kích thước lớn hơn như 5x5, 7x7 hoặc 9x9 giúp làm mượt các biến đổi lớn hơn trong vùng lân cận, loại bỏ nhiễu mạnh hơn, 
+                            và đảm bảo rằng các biến đổi cục bộ không ảnh hưởng quá nhiều đến giá trị NI
+            -> MRELBP_RD: + median filter 5x5.7x7,9x9:  liên quan đến việc nắm bắt các đặc trưng kết cấu của một vùng lớn hơn quanh pixel trung tâm, do đó cần phải xử lý trên các vùng rộng hơn so với CI. 
+                            Việc này đòi hỏi bộ lọc trung vị có kích thước lớn hơn để làm mượt và loại bỏ nhiễu trong các vùng lớn hơn.
+                          + RD tập trung vào việc nắm bắt các đặc điểm kết cấu hướng tâm (radial), vì vậy cần phải tính đến các mối quan hệ không chỉ gần mà còn xa giữa các pixel trong cùng một vùng ảnh. Điều này yêu cầu một vùng lân cận rộng hơn.
+                          + Bộ lọc lớn hơn giúp làm mượt các mẫu kết cấu trong một phạm vi rộng hơn, tạo ra một mô tả kết cấu hướng tâm chính xác và phản ánh sự phân bố của các pixel xung quanh trong các hướng khác nhau.
+                          + Bộ lọc trung vị kích thước lớn hơn (như 7x7 hoặc 9x9) đảm bảo rằng RD không bị ảnh hưởng bởi các chi tiết nhiễu nhỏ mà chỉ tập trung vào các kết cấu tổng quát và quan trọng hơn.
+            
+            =>  + Loaại bỏ nhiễu: Khi sử dụng bộ lọc lớn hơn, như 5x5 hay 9x9, nó giúp giảm thiểu các hiệu ứng của nhiễu ngẫu nhiên trong hình ảnh, đảm bảo rằng mô tả RD và NI không bị ảnh hưởng bởi các thay đổi cục bộ quá nhỏ hoặc nhiễu.
+                + Bảo tồn cấu trúc lớn: Bộ lọc trung vị lớn giúp làm mượt các biến đổi không mong muốn nhưng vẫn bảo tồn được các cấu trúc lớn trong hình ảnh, điều này rất quan trọng cho việc mô tả kết cấu toàn diện trong RD và NI.
+
+        interpolation: nội suy song song, trích xuất các vị trí không gian (giú hình ảnh trước khi đưa vô tính toán được chính xác hơn)
+            -> vì hàm tính toán MRELBP_NI + MRELBP_RD liên quan đến các tọa độ không gian nên hàm nội suy sẽ giúp hình ảnh đưa vô rõ ràng hơn
+               nhưng vẫn ko làm mất đi các đặc trưng của hình ảnh.  
+
+        MRELBP_CI  : Tính toán LBP với các pixel trung tâm
+        MRELBP_NI  : Tính toán LBP với các pixel gần kề hoặc nằm trên đường tròn với tâm là pixel trung tâm
+        MRELBP_RD  : Tính toán LBP với các điểm gần kề nằm trên 2 đường tròn có bán kính khác nhau
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 III. Classification
     Increamental tranning algorithms are used 
