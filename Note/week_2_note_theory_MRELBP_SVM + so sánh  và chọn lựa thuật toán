@@ -1,0 +1,48 @@
+Để đánh giá hai kỹ thuật—MRELBP (Median Robust Extended Local Binary Pattern) và bộ lọc Gabor—dưới đây là so sánh có cấu trúc dựa trên các khía cạnh chính:
+
+I. Phân loại kết cấu với MRELBP và SVM:
+    1) Thuật toán MRELBP: Phương pháp này cải thiện LBP truyền thống bằng cách làm cho nó mạnh hơn trước nhiễu và sự thay đổi ánh sáng. 
+    Nó nắm bắt chi tiết kết cấu và thông tin không gian tốt hơn thông qua lọc trung vị và mẫu mở rộng.
+    + Ưu điểm:
+        Khả năng chống nhiễu: Lọc trung vị giúp giảm nhiễu trong khi vẫn giữ chi tiết kết cấu.
+        Hiệu quả trong việc nắm bắt các đặc điểm kết cấu: Thiết kế của nó làm cho nó phù hợp để phân tích kết cấu chi tiết.
+        Hiệu suất tính toán cao: So với các bộ mô tả kết cấu khác, nó tương đối nhanh cho các tác vụ phân loại.
+    + Nhược điểm:
+        Giới hạn ở các mẫu cục bộ: Mặc dù được mở rộng, các kỹ thuật dựa trên LBP tập trung vào chi tiết kết cấu cục bộ và có thể bỏ sót các biến đổi kết cấu ở quy mô lớn.
+        Kích thước bán kính và hàng xóm cố định: Các đặc điểm kết cấu được nắm bắt tại các bán kính cố định, làm cho nó ít linh hoạt hơn với các kết cấu ở nhiều tỷ lệ khác nhau.
+    2) SVM (Support Vector Machine): Kết hợp với MRELBP, SVM được sử dụng để phân loại bằng cách tìm siêu phẳng tách các lớp kết cấu.
+    + Ưu điểm:
+        Bộ phân loại mạnh cho dữ liệu có chiều cao: Hoạt động tốt trong việc phân biệt các kết cấu trong không gian đặc trưng lớn.
+        Hiệu quả với dữ liệu nhỏ: Hiệu suất tốt với số lượng mẫu kết cấu tương đối nhỏ.
+    + Nhược điểm:
+        Nhạy cảm với việc điều chỉnh tham số: Hiệu suất của SVM phụ thuộc vào việc chọn đúng kernel và tham số điều chỉnh.
+        Tiêu tốn bộ nhớ cho tập dữ liệu lớn: Khi kích thước dữ liệu tăng lên, hiệu suất của SVM giảm do phụ thuộc vào các vectors hỗ trợ.
+II. Bộ lọc Gabor cho việc khử nhiễu ảnh và mô hình phần cứng:
+    1) Bộ lọc Gabor: Đây là các bộ lọc không gian được sử dụng để trích xuất đặc trưng, đặc biệt trong phân tích kết cấu. 
+    Trong ngữ cảnh này, chúng cũng được áp dụng để khử nhiễu hình ảnh.
+    + Ưu điểm:
+       Phân tích đa tỷ lệ và đa hướng: Bộ lọc Gabor nắm bắt thông tin kết cấu ở nhiều tỷ lệ và hướng, làm cho nó phù hợp để phân biệt các mẫu kết cấu phức tạp.
+       Phân tích trong miền tần số và không gian: Kết hợp thông tin trong miền tần số và không gian cho cái nhìn toàn diện hơn về kết cấu.
+       Khả năng khử nhiễu đa dụng: Bộ lọc Gabor khử nhiễu hiệu quả trong khi giữ được các cạnh và mẫu kết cấu.
+    + Nhược điểm:
+       Phức tạp tính toán: Bộ lọc Gabor đòi hỏi tài nguyên tính toán lớn, đặc biệt khi áp dụng trên nhiều tỷ lệ và hướng.
+       Sự đánh đổi trong khử nhiễu: Tùy thuộc vào thiết lập bộ lọc, nó có thể làm mờ các chi tiết kết cấu nhỏ cùng với nhiễu, ảnh hưởng đến độ chính xác phân loại.
+    2) Mô hình phần cứng cho việc khử nhiễu:
+    + Ưu điểm:
+       Xử lý thời gian thực: Việc triển khai phần cứng có thể tăng tốc độ khử nhiễu đáng kể, làm cho nó phù hợp với các hệ thống phân loại kết cấu thời gian thực.
+       Hiệu quả với hình ảnh độ phân giải cao: Các mô hình phần cứng thường được tối ưu hóa cho xử lý song song, xử lý hình ảnh độ phân giải cao hiệu quả hơn.
+    + Nhược điểm:
+       Sự phức tạp trong triển khai: Việc thiết kế và triển khai các mô hình phần cứng đòi hỏi kiến thức chuyên môn, và việc gỡ lỗi có thể khó khăn.
+III. Đánh giá so sánh:
+    + Trọng tâm ứng dụng: Nếu trọng tâm chính là độ chính xác phân loại, MRELBP kết hợp với SVM có thể phù hợp hơn vì nó được điều chỉnh để nắm bắt các đặc điểm kết cấu một cách mạnh mẽ và hiệu quả. 
+    Mặt khác, nếu tập trung vào khử nhiễu và tăng tốc phần cứng, bộ lọc Gabor kết hợp với mô hình phần cứng sẽ mang lại lợi ích cho việc cải thiện chất lượng hình ảnh trước khi phân loại.
+
+    + Tài nguyên tính toán: MRELBP-SVM cung cấp một phương pháp phần mềm đơn giản hơn, hiệu quả về tính toán, trong khi bộ lọc Gabor yêu cầu nhiều tài nguyên hơn, đặc biệt là trong triển khai phần cứng.
+
+    + Khả năng chống nhiễu: Trong khi cả hai phương pháp đều xử lý nhiễu, MRELBP được thiết kế đặc biệt để chống nhiễu, làm cho nó lý tưởng trong môi trường nhiễu. 
+    Bộ lọc Gabor, mặc dù khử nhiễu hiệu quả, có thể làm mờ các chi tiết kết cấu quan trọng.
+
+    + Tính linh hoạt: Bộ lọc Gabor rất linh hoạt trong việc trích xuất các đặc trưng kết cấu đa tỷ lệ, nhưng MRELBP tập trung nhiều hơn vào cấu trúc kết cấu cục bộ.
+
+Dựa trên yêu cầu của đồ án, nếu bạn muốn đánh giá cả hai phương pháp cho các tác vụ phân loại kết cấu, bạn có thể làm nổi bật MRELBP-SVM về hiệu suất phân loại và sử dụng bộ lọc Gabor để khử nhiễu nhằm khám phá việc xử lý hình ảnh trước khi phân loại. 
+Cách tiếp cận kép này sẽ cho phép bạn so sánh toàn diện về điểm mạnh và điểm yếu của chúng trong cả hai giai đoạn.
