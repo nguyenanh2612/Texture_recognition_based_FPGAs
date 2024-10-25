@@ -1,0 +1,36 @@
+                Texture Classification System on FPGAs
+I. Texture classification system 
+    Divided into 3 modules: 
+        + Texture Extraction
+        + Tranning
+        + Classification
+
+II. Texture Extraction 
+    Logic Binary Pattern (LBP) is widely used 
+    Reason for this popular: 
+        + its invariance to monotonic illumination changes and low computational complexity
+        + in Vienamese: tính bất biến của nó đối với các thay đổi chiếu sáng đơn điệu và độ phức tạp tính toán thấp.
+        + Efficiency: LBP is computationally efficient, making it suitable for real-time applications.
+        + Robustness: It is invariant to monotonic gray-scale changes, which means it can handle variations in illumination.
+        + Simplicity: The algorithm is straightforward to implement and understand.
+        + Good Performance: LBP has been shown to perform well in various texture classification tasks, often achieving high accuracy.
+    Type (biến thể khác): 
+        + Complete LBP
+        + Rotation Invariant Robust Rinary Texture Classification
+        + Scale Variable LBP
+        + Median Robust Extended Local Binary Pattern (MRELBP)
+    Compare: 
+        + So với các biến thể khác, thuật toán MRELBP dựa trên việc kết hợp bộ lọc trung vị (median filter) với hỗ trợ đa độ phân giải (multiresolution support), 
+    khắc phục được nhược điểm nhạy cảm với độ mờ và nhiễu của ảnh, không nắm bắt được cấu trúc vĩ mô kết cấu và 
+    tính đa chiều của đặc điểm.
+        + Ngoài ra các biến thể trên có một nhược điểm đó chính là nhạy cảm với độ mờ và nhiễu của ảnh tính đa chiều của ảnh dẫn đến khả năng phức tạp trong tính toán. 
+
+III. Classification
+    Increamental tranning algorithms are used 
+    Reason for this popular: 
+        + Train all the data when new samples appear.
+    Type: 
+        + Increamental tranning of random forests.
+        + Semi supervised increamental SVM.
+        + Increamental fuzzy classifiers.
+        + Increamental SVM. 
