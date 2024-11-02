@@ -1,0 +1,15 @@
+  + Phương pháp giảm chiều cho bộ lọc trung vị 7×7 và 9×9 giúp đơn giản hóa quá trình lọc trung vị 
+bằng cách giảm số lượng điểm ảnh cần được xử lý để tìm giá trị trung vị. Cách tiếp cận này cải thiện hiệu quả 
+của bộ lọc bằng cách tập trung vào một tập hợp nhỏ hơn các giá trị điểm ảnh liên quan, giúp giảm bớt khối lượng tính toán 
+mà không ảnh hưởng nhiều đến chất lượng đầu ra của giá trị trung vị. Dưới đây là lý do phương pháp này hiệu quả:
+
+        + Tăng hiệu suất và giảm khối lượng tính toán: Bộ lọc trung vị với kích thước cửa sổ lớn (như 7×7 hoặc 9×9) yêu cầu sắp xếp một lượng lớn điểm ảnh, 
+          điều này đòi hỏi nhiều tính toán. Bằng cách giảm chiều từ 7×7 xuống 5×5 (hoặc từ 9×9 xuống 7×7), thuật toán giảm số điểm ảnh cần được sắp xếp và xử lý, 
+          từ đó tăng tốc quá trình lọc và giảm bớt khối lượng tính toán.
+        + Giữ lại có chọn lọc các điểm ảnh liên quan: Thuật toán được thiết kế để giữ lại một tập hợp con các điểm ảnh trung tâm, vốn có khả năng gần với giá trị trung vị của cửa sổ lọc lớn hơn. 
+          Bằng cách loại bỏ 10 điểm dữ liệu ở góc trên bên trái và góc dưới bên phải, thuật toán tập trung vào các điểm ảnh nằm gần trung tâm của cửa sổ hơn, có xu hướng mang giá trị gần trung vị hơn 
+          trong các ảnh tự nhiên.
+        + Sắp xếp hai bước để đạt độ chính xác: Việc sắp xếp các cột và hàng trong hai bước giúp tạo ra một xấp xỉ tốt hơn cho giá trị trung vị trung tâm. Sau khi sắp xếp các cột, mỗi hàng được sắp xếp để tinh chỉnh thứ tự thêm nữa. 
+          Cách tổ chức này cho phép quá trình chọn lọc hiệu quả hơn trong các bước tiếp theo.
+        + Khả năng mở rộng cho các bộ lọc lớn hơn: Quá trình giảm chiều này có thể mở rộng, có nghĩa là các bước tương tự có thể áp dụng cho các bộ lọc lớn hơn (như giảm bộ lọc 9×9 xuống cửa sổ 7×7). 
+          Điều này làm cho phương pháp trở nên linh hoạt và phù hợp với các kích thước bộ lọc khác nhau, cho phép thuật toán hoạt động hiệu quả ngay cả với các bộ lọc trung vị lớn.
