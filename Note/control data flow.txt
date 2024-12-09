@@ -1,0 +1,13 @@
+Computing NI & RD
+
+After bilinear interpolation to find 4 points in 45, 135, 225, 315 degrees. 
+And taking data of 4 points in 0,90,180,270 => calcul NI and R.
+
+From processing median filter with 2x + 1 (x belongs to [1:4]) corresponding to radius 2,4,6,8y, to interpolation, 
+system need a cache memory for each radius.
+
+Each cache is a 2R + 1 x 2R + 1 size, with r = 2 (median 3x3). (Get enough size)
+With r = 4 (median 5x5) => result matrix 4x4 <<<< 9x9. New flow of input sub image. The same as with other radius. 
+
+Conflict flow of r = 4, r = 6, r = 8 => take new 120 x 2R + 1 (too many needed resources). 
+???? 
