@@ -1,0 +1,181 @@
+module tb;
+    ////////////////////////////////////////////////////////////////////
+    ///////                 PARAMETER + VARIABLE                 /////// 
+    ////////////////////////////////////////////////////////////////////
+    /*Parameter*/
+    parameter WIDTH = 9;                        // Width of bram 
+    parameter DEPTH = 9;                        // Depth of bram   
+    parameter SIZED = 8;                        // Size of each cellparameter WIDTH = 9  
+    
+    /*Variable*/
+    // Input
+    logic tb_clk; 
+    logic tb_rst; 
+    logic [SIZED-1:0] tb_din; 
+    // Output test 
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST FOR CONTROL + BRAM INPUT                 /////// 
+    ////////////////////////////////////////////////////////////////////////////////////
+    // logic tb_enable_3x3; 
+    // logic tb_enable_5x5; 
+    // logic tb_enable_7x7;  logic tb_enable_7x7_syn_with_data; 
+    // logic tb_enable_9x9;  logic tb_enable_9x9_syn_with_data_1; logic tb_enable_9x9_syn_with_data_2;
+
+    // logic [2:0] tb_state_3x3;
+    // logic [2:0] tb_state_5x5;
+    // logic [2:0] tb_state_7x7;
+    // logic       tb_state_9x9;
+
+    // logic [SIZED*9-1:0] tb_bram_of_median_9x9 [8:0]; 
+
+    ////////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST FOR MEDIAN PROCESSING                /////// 
+    ////////////////////////////////////////////////////////////////////////////////
+    // logic [SIZED-1:0] tb_median_3x3; 
+    // logic [SIZED-1:0] tb_median_5x5; 
+    // logic [SIZED-1:0] tb_median_7x7;
+    // logic [SIZED-1:0] tb_median_9x9;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF MEDIAN PROCESSING RESULT STORE               ///////
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    logic [5:0]       tb_addr; 
+    logic [SIZED-1:0] tb_bram_3x3;
+
+    /////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF PRE CI_CALULATOR               ///////
+    /////////////////////////////////////////////////////////////////////////////
+    logic [SIZE-1:0]  tb_hold_value_for_ci_calculator [48:0]; 
+
+
+    //////////////////////////////////////////////////////////////////
+    ///////                 INSTANTIATE MODULE                 /////// 
+    //////////////////////////////////////////////////////////////////
+    MRELBP #(
+        .WIDTH  (WIDTH),
+        .DEPTH  (DEPTH),
+        .SIZED  (SIZED)
+    )dut(
+        // Input
+        .i_clk                      (tb_clk), 
+        .i_rst                      (tb_rst), 
+        .i_din                      (tb_din), 
+
+    //////////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF MEDIAN PRE-PROCESSING               ///////
+    //////////////////////////////////////////////////////////////////////////////////
+        // .o_enable_3x3               (tb_enable_3x3),
+        // .o_enable_5x5               (tb_enable_5x5),
+        // .o_enable_7x7               (tb_enable_7x7),
+        // .o_enable_9x9               (tb_enable_9x9),
+
+        // .o_state_3x3                (tb_state_3x3),
+        // .o_state_5x5                (tb_state_5x5),
+        // .o_state_7x7                (tb_state_7x7),
+        // .o_state_9x9                (tb_state_9x9),
+
+        // .o_bram_of_median_9x9       (tb_bram_of_median_9x9)
+
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF MEDIAN PROCESSING                ///////
+    ///////////////////////////////////////////////////////////////////////////////
+        // .o_median_3x3                      (tb_median_3x3),
+        // .o_median_5x5                      (tb_median_5x5), 
+        // .o_median_7x7                      (tb_median_7x7), 
+        // .o_median_9x9                      (tb_median_9x9)
+    
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF MEDIAN PROCESSING RESULT STORE               ///////
+    ///////////////////////////////////////////////////////////////////////////////////////////
+        .o_addr_3x3                            (tb_addr),
+        .o_bram_3x3                        (tb_bram_3x3),
+
+    /////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF PRE CI_CALULATOR               ///////
+    /////////////////////////////////////////////////////////////////////////////
+        .o_hold_value_for_ci                (tb_hold_value_for_ci_calculator)
+
+    );
+
+    ////////////////////////////////////////////////////////////////
+    ///////                 DUMP FILE + VARS                 /////// 
+    ////////////////////////////////////////////////////////////////
+    initial begin
+        $dumpfile("MRELBP.vcd"); 
+        $dumpvars(0,tb); 
+    end
+
+    //////////////////////////////////////////////////////////////
+    ///////                 GENERATE CLOCK                 /////// 
+    //////////////////////////////////////////////////////////////
+    initial begin
+        tb_clk = 1'b1; 
+        forever #5 tb_clk = ~tb_clk;
+    end
+
+    /////////////////////////////////////////////////////////
+    ///////                 TEST CASE                 /////// 
+    /////////////////////////////////////////////////////////
+    initial begin
+        $display("///////////////////////////////////////////////////");
+        $display("///                 APLLY RESET                 ///");
+        $display("///////////////////////////////////////////////////");
+        tb_rst = 1'b1; 
+        tb_din = 0; // Apply reset 
+        #10;
+        $display("//////////////////////////////////////////////////////////////////////");
+        $display("///                 START TEST WITH 90 INPUT PIXELS                ///");
+        $display("//////////////////////////////////////////////////////////////////////");
+        tb_rst = 1'b0;
+        // Add stimulus 
+        repeat (90) begin 
+            tb_din = $random;
+            #10; 
+        end
+        #1000; 
+        $finish; 
+    end
+
+    //////////////////////////////////////////////////////////////
+    ///////                 CAPTURE RESULT                 /////// 
+    //////////////////////////////////////////////////////////////
+    // always_ff @( posedge tb_clk ) begin
+    //     tb_enable_7x7_syn_with_data <= tb_enable_7x7;
+    //     tb_enable_9x9_syn_with_data_1 <= tb_enable_9x9;  
+    // end
+
+    // always_ff @( posedge tb_clk ) begin
+    //     tb_enable_9x9_syn_with_data_2 <= tb_enable_9x9_syn_with_data_1; 
+    // end
+
+    always_ff @( posedge tb_clk ) begin
+        $display("////////////////////////////////////////////////////////////////////");
+        $display("///                 TIME: %0t + DIN:%h + ADDR:%h                 ///", $time, tb_din,tb_addr);
+        $display("////////////////////////////////////////////////////////////////////");
+        // $display("%h", tb_bram_of_median_9x9[8]);
+        // $display("%h", tb_bram_of_median_9x9[7]);
+        // $display("%h", tb_bram_of_median_9x9[6]);
+        // $display("%h", tb_bram_of_median_9x9[5]);
+        // $display("%h", tb_bram_of_median_9x9[4]);
+        // $display("%h", tb_bram_of_median_9x9[3]);
+        // $display("%h", tb_bram_of_median_9x9[2]);
+        // $display("%h", tb_bram_of_median_9x9[1]);
+        // $display("%h", tb_bram_of_median_9x9[0]);
+        // $display("Enable 3x3:%b -- 5x5:%b -- 7x7%b -- 9x9:%b", tb_enable_3x3, tb_enable_5x5, tb_enable_7x7, tb_enable_9x9);
+        // $display("Median result(3x3): %h -- Enable: %b", tb_median_3x3, tb_enable_3x3);
+        // $display("Median result(5x5): %h -- Enable: %b", tb_median_5x5, tb_enable_5x5);
+        // $display("Median result(7x7): %h -- Enable: %b", tb_median_7x7, tb_enable_7x7_syn_with_data);
+        // $display("Median result(9x9): %h -- Enable: %b", tb_median_9x9, tb_enable_9x9_syn_with_data_2);
+        // $display("Median result(3x3): %h", tb_median_3x3);
+        // $display("Median result(5x5): %h", tb_median_5x5);
+        // $display("Median result(7x7): %h", tb_median_7x7);
+        // $display("Median result(9x9): %h", tb_median_9x9);
+        // $display("Median store result: %h", tb_bram_3x3);
+
+        foreach(tb_hold_value_for_ci_calculator[i]) begin
+            $display("Element[%d]: %h", i, tb_hold_value_for_ci_calculator[i]);
+        end
+    end
+
+endmodule

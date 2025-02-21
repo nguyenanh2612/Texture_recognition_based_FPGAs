@@ -1,0 +1,34 @@
+module hold_value #(
+    parameter WIDTH = 8,                                    // Width of data
+    parameter SIZE =  25                                    // Number of elements
+) (
+    ///////////////////////////////////////////////////////////////
+    ///////                 INPUT OF MODULE                 ///////
+    ///////////////////////////////////////////////////////////////
+    input logic [$clog2(SIZE)-1:0]      i_enable,           // Enable hold value
+    input logic [WIDTH-1:0]             i_din,              // Data in for hold 
+
+    ////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT OF MODULE                 ///////
+    ////////////////////////////////////////////////////////////////
+    output logic [WIDTH-1:0]            o_dout [SIZE-1:0]   // Data out
+);
+    ////////////////////////////////////////////////////////
+    ///////                 VARIABLE                 ///////
+    ////////////////////////////////////////////////////////
+    // Internal memory
+    logic [WIDTH-1:0] mem [SIZE-1:0]; 
+
+    //////////////////////////////////////////////////////////
+    ///////                 HOLD VALUE                 ///////
+    //////////////////////////////////////////////////////////
+    always @(*) begin
+        for (int i = 0; i < SIZE; i++) begin
+            if (i_enable == i) begin
+                mem[i] = i_din;
+            end
+            o_dout[i] = mem[i];
+        end
+    end
+
+endmodule 

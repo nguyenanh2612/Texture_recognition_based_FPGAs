@@ -1,0 +1,469 @@
+module MRELBP #(
+    parameter WIDTH = 9,                                           // Width of bram
+    parameter DEPTH = 9,                                           // Depth of bram 
+    parameter SIZED = 8                                            // Size of each cellparameter WIDTH = 9
+) (
+    ///////////////////////////////////////////////////////////////
+    ///////                 INPUT OF MODULE                 ///////
+    ///////////////////////////////////////////////////////////////
+    input logic i_clk,                                             // GLobal clock 
+    input logic i_rst,                                             // Global reset 
+    input logic [SIZED-1:0] i_din,                                 // Pixel
+
+    //////////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF MEDIAN PRE-PROCESSING               ///////
+    //////////////////////////////////////////////////////////////////////////////////
+    // output logic o_enable_3x3,                                     // Enable signal 3x3    
+    // output logic o_enable_5x5,                                     // Enable signal 5x5    
+    // output logic o_enable_7x7,                                     // Enable signal 7x7    
+    // output logic o_enable_9x9,                                     // Enable signal 9x9    
+
+    // output logic [2:0]  o_state_3x3,                               // State test of control 3x3
+    // output logic [2:0]  o_state_5x5,                               // State test of control 5x5
+    // output logic [2:0]  o_state_7x7,                               // State test of control 7x7
+    // output logic        o_state_9x9,                               // State test of control 9x9
+
+    // output logic [SIZED*9-1:0] o_bram_of_median_9x9 [8:0]          // Output of bram for median 9x9 
+    
+    ///////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF MEDIAN PROCESSING                ///////
+    ///////////////////////////////////////////////////////////////////////////////
+
+    // output logic [SIZED-1:0] o_median_3x3,                         // Median filter 3x3 result
+    // output logic [SIZED-1:0] o_median_5x5,                         // Median filter 5x5 result
+    // output logic [SIZED-1:0] o_median_7x7,                         // Median filter 7x7 result
+    // output logic [SIZED-1:0] o_median_9x9,                         // Median filter 9x9 result
+
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF MEDIAN PROCESSING RESULT STORE               ///////
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    output logic [5:0]       o_addr_3x3,                           // Read and write address
+    output logic [SIZED-1:0] o_bram_3x3                            // Median filter 3x3 result
+    // output logic [SIZED-1:0] o_bram_5x5,                           // Median filter 5x5 result
+    // output logic [SIZED-1:0] o_bram_7x7,                           // Median filter 7x7 result
+    // output logic [SIZED-1:0] o_bram_9x9                            // Median filter 9x9 result
+);
+
+    ////////////////////////////////////////////////////////
+    ///////                 VARIABLE                 /////// 
+    ////////////////////////////////////////////////////////
+
+    // Input bram step
+    /*Output of image bram*/
+    logic [SIZED*DEPTH-1:0] o_image_bram [DEPTH-1:0];
+
+    // State of each controller
+    logic [2:0] state_3x3; 
+    logic [2:0] state_5x5;
+    logic [2:0] state_7x7;
+    logic       state_9x9; 
+
+    // Control of median processing signal
+    logic enable_3x3; 
+    logic enable_5x5; 
+    logic enable_7x7; 
+    logic enable_9x9; 
+
+    // Median result
+    logic [SIZED-1:0] median_3x3;
+    logic [SIZED-1:0] median_5x5;
+    logic [SIZED-1:0] median_7x7;
+    logic [SIZED-1:0] median_9x9;
+
+    // Read and write address automatic
+    logic [5:0] addr_next_3x3_bram, addr_cur_3x3_bram; 
+
+    // Addr hold enable 1 clock for hold data; 
+    logic enable_hold_for_bram_3x3_output;
+    //////////////////////////////////////////////////////////
+    ///////                 INPUT BRAM                 /////// 
+    //////////////////////////////////////////////////////////
+
+    image_bram #(
+        .WIDTH      (WIDTH), 
+        .DEPTH      (DEPTH), 
+        .SIZED      (SIZED)
+    ) store_input_pixel(
+        .i_clk      (i_clk), 
+        .i_rst      (i_rst), 
+        .i_data     (i_din), 
+        .i_wren     (1'b1),              // Always write
+        .o_data     (o_image_bram)
+    );
+
+    //////////////////////////////////////////////////////////////////////////////////
+    ///////                 CONTROL FOR MEDIAN PROCESSING BRAM                 /////// 
+    //////////////////////////////////////////////////////////////////////////////////
+
+    // Control of median filter 3x3; 
+    bram_to_median_3_controller controller_3x3(
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        .o_state                (state_3x3), 
+        .o_enable_3x3           (enable_3x3)
+    );
+    // Control of median filter 5x5; 
+    bram_to_median_5_controller controller_5x5(
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        .o_state                (state_5x5), 
+        .o_enable_5x5           (enable_5x5)
+    );
+    // Control of median filter 7x7; 
+    bram_to_median_7_controller controller_7x7(
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        .o_state                (state_7x7), 
+        .o_enable_7x7           (enable_7x7)
+    );
+    // Control of median filter 9x9; 
+    bram_to_median_9_controller controller_9x9(
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        .o_state                (state_9x9), 
+        .o_enable_9x9           (enable_9x9)
+    );  
+
+    /////////////////////////////////////////////////////////////////
+    ///////                 MEDIAN PROCESSING                 /////// 
+    /////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////
+    ///////                 MEDIAN FILTER 3X3                /////// 
+    ////////////////////////////////////////////////////////////////
+    median_filter_3 #(
+        .WIDTH                  (SIZED)
+    )filter_3x3(
+        // Enable signal
+        .i_enable_3x3           (enable_3x3),
+        // Row 0
+        .i_pixel_00             (o_image_bram[5][7:0]), 
+        .i_pixel_01             (o_image_bram[5][15:8]), 
+        .i_pixel_02             (o_image_bram[5][23:16]), 
+        // Row 1
+        .i_pixel_10             (o_image_bram[4][7:0]), 
+        .i_pixel_11             (o_image_bram[4][15:8]), 
+        .i_pixel_12             (o_image_bram[4][23:16]), 
+        // Row 2
+        .i_pixel_20             (o_image_bram[3][7:0]), 
+        .i_pixel_21             (o_image_bram[3][15:8]), 
+        .i_pixel_22             (o_image_bram[3][23:16]),
+        // Output 
+        .o_pixel_median         (median_3x3)
+    ); 
+
+    ////////////////////////////////////////////////////////////////
+    ///////                 MEDIAN FILTER 5X5                /////// 
+    ////////////////////////////////////////////////////////////////
+    median_filter_5 #(
+        .WIDTH                  (SIZED)
+    )filter_5x5(
+        // Enable signal
+        .i_enable_5x5           (enable_5x5),
+        // Row 0
+        .i_pixel_00             (o_image_bram[6][7:0]), 
+        .i_pixel_01             (o_image_bram[6][15:8]), 
+        .i_pixel_02             (o_image_bram[6][23:16]),
+        .i_pixel_03             (o_image_bram[6][31:24]), 
+        .i_pixel_04             (o_image_bram[6][39:32]),
+        // Row 1
+        .i_pixel_10             (o_image_bram[5][7:0]),  
+        .i_pixel_11             (o_image_bram[5][15:8]),  
+        .i_pixel_12             (o_image_bram[5][23:16]), 
+        .i_pixel_13             (o_image_bram[5][31:24]), 
+        .i_pixel_14             (o_image_bram[5][39:32]),
+        // Row 2
+        .i_pixel_20             (o_image_bram[4][7:0]),  
+        .i_pixel_21             (o_image_bram[4][15:8]),  
+        .i_pixel_22             (o_image_bram[4][23:16]), 
+        .i_pixel_23             (o_image_bram[4][31:24]),
+        .i_pixel_24             (o_image_bram[4][39:32]),
+        // Row 3 
+        .i_pixel_30             (o_image_bram[3][7:0]),  
+        .i_pixel_31             (o_image_bram[3][15:8]),  
+        .i_pixel_32             (o_image_bram[3][23:16]), 
+        .i_pixel_33             (o_image_bram[3][31:24]), 
+        .i_pixel_34             (o_image_bram[3][39:32]),
+        // Row 4
+        .i_pixel_40             (o_image_bram[2][7:0]), 
+        .i_pixel_41             (o_image_bram[2][15:8]),  
+        .i_pixel_42             (o_image_bram[2][23:16]), 
+        .i_pixel_43             (o_image_bram[2][31:24]), 
+        .i_pixel_44             (o_image_bram[2][39:32]),
+        // Output 
+        .o_value_median         (median_5x5)
+    );
+    ////////////////////////////////////////////////////////////////
+    ///////                 MEDIAN FILTER 7X7                /////// 
+    ////////////////////////////////////////////////////////////////
+    median_filter_7 #(
+        .WIDTH                  (SIZED)
+    )filter_7x7(
+        // Global clock and reset
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        // Enable signal
+        .i_enable_7x7           (enable_7x7), 
+        // Row 0 
+        .i_pixel_00             (o_image_bram[7][7:0]), 
+        .i_pixel_01             (o_image_bram[7][15:8]), 
+        .i_pixel_02             (o_image_bram[7][23:16]), 
+        .i_pixel_03             (o_image_bram[7][31:24]), 
+        .i_pixel_04             (o_image_bram[7][39:32]), 
+        .i_pixel_05             (o_image_bram[7][47:40]), 
+        .i_pixel_06             (o_image_bram[7][55:48]),
+        // Row 1 
+        .i_pixel_10             (o_image_bram[6][7:0]),  
+        .i_pixel_11             (o_image_bram[6][15:8]),  
+        .i_pixel_12             (o_image_bram[6][23:16]), 
+        .i_pixel_13             (o_image_bram[6][31:24]), 
+        .i_pixel_14             (o_image_bram[6][39:32]), 
+        .i_pixel_15             (o_image_bram[6][47:40]), 
+        .i_pixel_16             (o_image_bram[6][55:48]),
+        // Row 2 
+        .i_pixel_20             (o_image_bram[5][7:0]),  
+        .i_pixel_21             (o_image_bram[5][15:8]),  
+        .i_pixel_22             (o_image_bram[5][23:16]), 
+        .i_pixel_23             (o_image_bram[5][31:24]), 
+        .i_pixel_24             (o_image_bram[5][39:32]), 
+        .i_pixel_25             (o_image_bram[5][47:40]), 
+        .i_pixel_26             (o_image_bram[5][55:48]),
+        // Row 3 
+        .i_pixel_30             (o_image_bram[4][7:0]),  
+        .i_pixel_31             (o_image_bram[4][15:8]),  
+        .i_pixel_32             (o_image_bram[4][23:16]), 
+        .i_pixel_33             (o_image_bram[4][31:24]), 
+        .i_pixel_34             (o_image_bram[4][39:32]), 
+        .i_pixel_35             (o_image_bram[4][47:40]), 
+        .i_pixel_36             (o_image_bram[4][55:48]),
+        // Row4
+        .i_pixel_40             (o_image_bram[3][7:0]),  
+        .i_pixel_41             (o_image_bram[3][15:8]),  
+        .i_pixel_42             (o_image_bram[3][23:16]), 
+        .i_pixel_43             (o_image_bram[3][31:24]), 
+        .i_pixel_44             (o_image_bram[3][39:32]), 
+        .i_pixel_45             (o_image_bram[3][47:40]), 
+        .i_pixel_46             (o_image_bram[3][55:48]),
+        // Row 5 
+        .i_pixel_50             (o_image_bram[2][7:0]),  
+        .i_pixel_51             (o_image_bram[2][15:8]),  
+        .i_pixel_52             (o_image_bram[2][23:16]), 
+        .i_pixel_53             (o_image_bram[2][31:24]), 
+        .i_pixel_54             (o_image_bram[2][39:32]), 
+        .i_pixel_55             (o_image_bram[2][47:40]), 
+        .i_pixel_56             (o_image_bram[2][55:48]),
+        // Row 6
+        .i_pixel_60             (o_image_bram[1][7:0]),  
+        .i_pixel_61             (o_image_bram[1][15:8]),  
+        .i_pixel_62             (o_image_bram[1][23:16]), 
+        .i_pixel_63             (o_image_bram[1][31:24]), 
+        .i_pixel_64             (o_image_bram[1][39:32]), 
+        .i_pixel_65             (o_image_bram[1][47:40]), 
+        .i_pixel_66             (o_image_bram[1][55:48]),
+        // Output
+        .o_value_median         (median_7x7)
+    );
+
+    ////////////////////////////////////////////////////////////////
+    ///////                 MEDIAN FILTER 9X9                /////// 
+    ////////////////////////////////////////////////////////////////
+    median_filter_9 #(
+        .WIDTH                  (SIZED)
+    )filter_9x9(
+        // Global clock and reset
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        // Enable signal
+        .i_enable_9x9           (enable_9x9),
+        // Row 0
+        .i_pixel_00             (o_image_bram[8][7:0]),   
+        .i_pixel_01             (o_image_bram[8][15:8]),  
+        .i_pixel_02             (o_image_bram[8][23:16]), 
+        .i_pixel_03             (o_image_bram[8][31:24]), 
+        .i_pixel_04             (o_image_bram[8][39:32]), 
+        .i_pixel_05             (o_image_bram[8][47:40]), 
+        .i_pixel_06             (o_image_bram[8][55:48]), 
+        .i_pixel_07             (o_image_bram[8][63:56]), 
+        .i_pixel_08             (o_image_bram[8][71:64]),
+        // Row 1
+        .i_pixel_10             (o_image_bram[7][7:0]),   
+        .i_pixel_11             (o_image_bram[7][15:8]),  
+        .i_pixel_12             (o_image_bram[7][23:16]), 
+        .i_pixel_13             (o_image_bram[7][31:24]), 
+        .i_pixel_14             (o_image_bram[7][39:32]), 
+        .i_pixel_15             (o_image_bram[7][47:40]), 
+        .i_pixel_16             (o_image_bram[7][55:48]), 
+        .i_pixel_17             (o_image_bram[7][63:56]), 
+        .i_pixel_18             (o_image_bram[7][71:64]),
+        // Row 2
+        .i_pixel_20             (o_image_bram[6][7:0]),   
+        .i_pixel_21             (o_image_bram[6][15:8]),  
+        .i_pixel_22             (o_image_bram[6][23:16]), 
+        .i_pixel_23             (o_image_bram[6][31:24]), 
+        .i_pixel_24             (o_image_bram[6][39:32]), 
+        .i_pixel_25             (o_image_bram[6][47:40]), 
+        .i_pixel_26             (o_image_bram[6][55:48]), 
+        .i_pixel_27             (o_image_bram[6][63:56]), 
+        .i_pixel_28             (o_image_bram[6][71:64]),
+        // Row 3
+        .i_pixel_30             (o_image_bram[5][7:0]),   
+        .i_pixel_31             (o_image_bram[5][15:8]),  
+        .i_pixel_32             (o_image_bram[5][23:16]), 
+        .i_pixel_33             (o_image_bram[5][31:24]), 
+        .i_pixel_34             (o_image_bram[5][39:32]), 
+        .i_pixel_35             (o_image_bram[5][47:40]), 
+        .i_pixel_36             (o_image_bram[5][55:48]), 
+        .i_pixel_37             (o_image_bram[5][63:56]), 
+        .i_pixel_38             (o_image_bram[5][71:64]),
+        // Row 4
+        .i_pixel_40             (o_image_bram[4][7:0]),   
+        .i_pixel_41             (o_image_bram[4][15:8]),  
+        .i_pixel_42             (o_image_bram[4][23:16]), 
+        .i_pixel_43             (o_image_bram[4][31:24]), 
+        .i_pixel_44             (o_image_bram[4][39:32]), 
+        .i_pixel_45             (o_image_bram[4][47:40]), 
+        .i_pixel_46             (o_image_bram[4][55:48]), 
+        .i_pixel_47             (o_image_bram[4][63:56]), 
+        .i_pixel_48             (o_image_bram[4][71:64]),
+        // Row 5
+        .i_pixel_50             (o_image_bram[3][7:0]),   
+        .i_pixel_51             (o_image_bram[3][15:8]),  
+        .i_pixel_52             (o_image_bram[3][23:16]), 
+        .i_pixel_53             (o_image_bram[3][31:24]), 
+        .i_pixel_54             (o_image_bram[3][39:32]), 
+        .i_pixel_55             (o_image_bram[3][47:40]), 
+        .i_pixel_56             (o_image_bram[3][55:48]), 
+        .i_pixel_57             (o_image_bram[3][63:56]), 
+        .i_pixel_58             (o_image_bram[3][71:64]),
+        // Row 6
+        .i_pixel_60             (o_image_bram[2][7:0]),   
+        .i_pixel_61             (o_image_bram[2][15:8]),  
+        .i_pixel_62             (o_image_bram[2][23:16]), 
+        .i_pixel_63             (o_image_bram[2][31:24]), 
+        .i_pixel_64             (o_image_bram[2][39:32]), 
+        .i_pixel_65             (o_image_bram[2][47:40]), 
+        .i_pixel_66             (o_image_bram[2][55:48]), 
+        .i_pixel_67             (o_image_bram[2][63:56]), 
+        .i_pixel_68             (o_image_bram[2][71:64]),
+        // Row 7
+        .i_pixel_70             (o_image_bram[1][7:0]),   
+        .i_pixel_71             (o_image_bram[1][15:8]),  
+        .i_pixel_72             (o_image_bram[1][23:16]), 
+        .i_pixel_73             (o_image_bram[1][31:24]), 
+        .i_pixel_74             (o_image_bram[1][39:32]), 
+        .i_pixel_75             (o_image_bram[1][47:40]), 
+        .i_pixel_76             (o_image_bram[1][55:48]), 
+        .i_pixel_77             (o_image_bram[1][63:56]), 
+        .i_pixel_78             (o_image_bram[1][71:64]),
+        // Row 8
+        .i_pixel_80             (o_image_bram[0][7:0]),   
+        .i_pixel_81             (o_image_bram[0][15:8]),  
+        .i_pixel_82             (o_image_bram[0][23:16]), 
+        .i_pixel_83             (o_image_bram[0][31:24]), 
+        .i_pixel_84             (o_image_bram[0][39:32]), 
+        .i_pixel_85             (o_image_bram[0][47:40]), 
+        .i_pixel_86             (o_image_bram[0][55:48]), 
+        .i_pixel_87             (o_image_bram[0][63:56]), 
+        .i_pixel_88             (o_image_bram[0][71:64]),
+        // Output 
+        .o_value_median         (median_9x9)
+    ); 
+
+    //////////////////////////////////////////////////////////////////////
+    ///////                 BRAM FOR MEDIAN RESULT                 /////// 
+    //////////////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    ///////                 BRAM FOR 3x3                 /////// 
+    ////////////////////////////////////////////////////////////
+    // Read and write address automatic
+    always @(posedge i_clk or posedge enable_3x3) begin
+        if (enable_3x3) begin
+            addr_cur_3x3_bram <= addr_next_3x3_bram; 
+        end
+    end
+    
+    always @(*) begin
+        if (enable_3x3) begin
+            if (addr_cur_3x3_bram != 48)
+                addr_next_3x3_bram = addr_cur_3x3_bram + 6'd1;
+            else
+                addr_next_3x3_bram = 6'd0;
+        end else begin
+            addr_next_3x3_bram = addr_cur_3x3_bram; 
+        end
+    end
+
+    // Test addr
+    assign o_addr_3x3 = addr_cur_3x3_bram; 
+
+    bram_3x3 #(
+        .WIDTH                  (SIZED), 
+        .FILTER                 (3)
+    )bram_median_3x3_result(
+        // Global clock 
+        .i_clk                  (i_clk), 
+        // Write enable         
+        .i_wren                 (enable_3x3), 
+        // Read and write address
+        .i_waddr                (o_addr_3x3), 
+        .i_raddr                (o_addr_3x3), 
+        // Data write 
+        .i_din                  (median_3x3), 
+        // Data read
+        .o_dout                 (o_bram_3x3)
+    );
+
+    ////////////////////////////////////////////////////////////
+    ///////                 BRAM FOR 5x5                 /////// 
+    ////////////////////////////////////////////////////////////
+    // bram_3x3 #(
+    //     .WIDTH                  (SIZED), 
+    //     .FILTER                 (5)
+    // )bram_median_5x5_result(
+    //     // Global clock 
+    //     .i_clk                  (i_clk), 
+    //     // Write enable         
+    //     .i_wren                 (enable_5x5), 
+    //     // Read and write address
+    //     .i_waddr                (o_addr), 
+    //     .i_raddr                (o_addr), 
+    //     // Data write 
+    //     .i_din                  (o_median_5x5), 
+    //     // Data read
+    //     .o_dout                 (o_bram_5x5)
+    // );
+
+
+    ////////////////////////////////////////////////////////////
+    ///////                 BRAM FOR 7x7                 /////// 
+    ////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////
+    ///////                 BRAM FOR 9x9                 /////// 
+    ////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////
+    ///////                 CI CALCULATOR                 /////// 
+    /////////////////////////////////////////////////////////////
+
+    always_ff @(posedge i_clk or enable_3x3) begin
+        enable_hold_for_bram_3x3_output <= i_enable_3x3;
+    end
+
+
+    ////////////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST FOR CONTROL + BRAM INPUT                 /////// 
+    ////////////////////////////////////////////////////////////////////////////////////
+    /*Out of median 9x9*/
+    // assign o_bram_of_median_9x9[0] = o_image_bram[8];  
+    // assign o_bram_of_median_9x9[1] = o_image_bram[7];  
+    // assign o_bram_of_median_9x9[2] = o_image_bram[6];  
+    // assign o_bram_of_median_9x9[3] = o_image_bram[5];  
+    // assign o_bram_of_median_9x9[4] = o_image_bram[4];  
+    // assign o_bram_of_median_9x9[5] = o_image_bram[3];  
+    // assign o_bram_of_median_9x9[6] = o_image_bram[2];  
+    // assign o_bram_of_median_9x9[7] = o_image_bram[1];  
+    // assign o_bram_of_median_9x9[8] = o_image_bram[0];  
+                      
+endmodule
