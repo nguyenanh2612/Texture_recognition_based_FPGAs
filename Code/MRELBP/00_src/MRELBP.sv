@@ -2,7 +2,7 @@ module MRELBP #(
     parameter WIDTH = 9,                                           // Width of bram
     parameter DEPTH = 9,                                           // Depth of bram 
     parameter SIZED = 8,                                           // Size of each cellparameter WIDTH = 9
-    parameter FIXED = 24                                           // Size of fixed point in interpolation
+    parameter FIXED = 24                                          // Size of fixed point in interpolation
 ) (
     ///////////////////////////////////////////////////////////////
     ///////                 INPUT OF MODULE                 ///////
@@ -10,6 +10,10 @@ module MRELBP #(
     input logic i_clk,                                             // GLobal clock 
     input logic i_rst,                                             // Global reset 
     input logic [SIZED-1:0] i_din,                                 // Pixel
+    input logic i_done_load_data_r8,                               // Done signal for loading data r8
+    input logic i_done_load_data_r6,                               // Done signal for loading data r6
+    input logic i_done_load_data_r4,                               // Done signal for loading data r4
+    input logic i_done_load_data_r2,                               // Done signal for loading data r2
 
     //////////////////////////////////////////////////////////////////////////////////
     ///////                 OUTPUT TEST OF MEDIAN PRE-PROCESSING               ///////
@@ -17,7 +21,7 @@ module MRELBP #(
     // output logic o_enable_3x3,                                     // Enable signal 3x3    
     // output logic o_enable_5x5,                                     // Enable signal 5x5    
     // output logic o_enable_7x7,                                     // Enable signal 7x7    
-    output logic o_enable_9x9,                                     // Enable signal 9x9    
+    // output logic o_enable_9x9,                                     // Enable signal 9x9    
 
     // output logic [2:0]  o_state_3x3,                               // State test of control 3x3
     // output logic [2:0]  o_state_5x5,                               // State test of control 5x5
@@ -33,7 +37,7 @@ module MRELBP #(
     // output logic [SIZED-1:0] o_median_3x3,                         // Median filter 3x3 result
     // output logic [SIZED-1:0] o_median_5x5,                         // Median filter 5x5 result
     // output logic [SIZED-1:0] o_median_7x7,                         // Median filter 7x7 result
-    output logic [SIZED-1:0] o_median_9x9,                         // Median filter 9x9 result
+    // output logic [SIZED-1:0] o_median_9x9,                         // Median filter 9x9 result
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     ///////                 OUTPUT TEST OF MEDIAN PROCESSING RESULT STORE BRAM               ///////
@@ -41,18 +45,18 @@ module MRELBP #(
     // output logic [5:0]       o_addr_3x3,                           // Read and write address 3x3 
     // output logic [6:0]       o_addr_5x5,                           // Read and write address 5x5
     // output logic [8:0]       o_addr_7x7,                           // Read and write address 7x7
-    output logic [8:0]       o_addr_9x9,                           //  Read and write address 9x9
+    // output logic [8:0]       o_addr_9x9,                           //  Read and write address 9x9
 
     // output logic [SIZED-1:0] o_bram_3x3,                           // Median filter 3x3 result
     // output logic [SIZED-1:0] o_bram_5x5,                           // Median filter 5x5 result
     // output logic [SIZED-1:0] o_bram_7x7,                            // Median filter 7x7 result
-    output logic [SIZED-1:0] o_bram_9x9,                            // Median filter 9x9 result
+    // output logic [SIZED-1:0] o_bram_9x9,                            // Median filter 9x9 result
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     ///////                 OUTPUT TEST OF HOLD VALUE BEFORE CACLCULATE CI               ///////
     ////////////////////////////////////////////////////////////////////////////////////////////
     // output logic [SIZED-1:0] o_hold_value_for_ci [48:0],           // Value hold before calculate CI
-    output logic [SIZED-1:0] o_hold_value [20:0]                  // Value hold before calculate ni and rd
+    // output logic [SIZED-1:0] o_hold_value [20:0],                  // Value hold before calculate ni and rd
 
     ////////////////////////////////////////////////////////////////////////////
     ///////                 OUTPUT TEST OF CI_2 CALCULATOR               ///////
@@ -61,8 +65,25 @@ module MRELBP #(
     // output logic [24:0] o_ci_2,                                    // Result of ci_2 (normalization)
     // output logic [48:0] o_ci_4,                                    // Result of ci_4 (normalization)  
     // output logic [48:0] o_ci_6,                                    // Result of ci_6 (normalization)                                       
-    // output logic [48:0] o_ci_8,                                    // Result of ci_8 (normalization)                                       
+    // output logic [48:0] o_ci_8,                                    // Result of ci_8 (normalization)            
 
+    ///////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF CI_2 HISTOGRAM               ///////
+    ///////////////////////////////////////////////////////////////////////////
+    output logic [23:0] o_rdata_r2_0,                              // Count logic 0 value in histogram of CI2
+    output logic [23:0] o_rdata_r2_1,                              // Count logic 1 value in histogram of CI2
+    // output logic        o_ready_r2,                                // Ready_r2 signal for enable to CI histogram
+
+    output logic [23:0] o_rdata_r4_0,                              // Count logic 0 value in histogram of CI2
+    output logic [23:0] o_rdata_r4_1,                              // Count logic 1 value in histogram of CI2
+    // output logic        o_ready_r4_6_8,                            // Ready_r4,6,8 signal for enable to CI histogram
+ 
+    output logic [23:0] o_rdata_r6_0,                              // Count logic 0 value in histogram of CI2
+    output logic [23:0] o_rdata_r6_1,                              // Count logic 1 value in histogram of CI2
+
+    output logic [23:0] o_rdata_r8_0,                              // Count logic 0 value in histogram of CI2
+    output logic [23:0] o_rdata_r8_1,                              // Count logic 1 value in histogram of CI2
+    
     ///////////////////////////////////////////////////////////////////////////////////////
     ///////                 OUTPUT TEST OF INTERPOLATION R CALCULATOR               ///////
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -81,12 +102,60 @@ module MRELBP #(
     // output logic [SIZED-1:0] o_ni_r2,                              // Output NI calculator
     // output logic [SIZED-1:0] o_rd_r2,                              // Output RD calculator                                                  
     // output logic [SIZED-1:0] o_ni_r4,                              // Output NI calculator
-    // output logic [SIZED-1:0] o_rd_r4,                              // Output RD calculator   
+    // output logic [SIZED-1:0] o_rd_r4,                              // Output RD calculator 
+    // output logic             o_ready_ni_rd_4,                      // Ready signal for updating ni_rd histogram
     // output logic [SIZED-1:0] o_ni_r6,                              // Output NI calculator
-    // output logic [SIZED-1:0] o_rd_r6,                              // Output RD calculator               
-    // output logic [SIZED-1:0] o_ni_r8,                              // Output NI calculator
-    // output logic [SIZED-1:0] o_rd_r8                               // Output RD calculator               
+    // output logic [SIZED-1:0] o_rd_r6,                              // Output RD calculator
+    // output logic             o_ready_ni_rd_6,                      // Ready signal for updating ni_rd histogram
 
+    // output logic [SIZED-1:0] o_ni_r8,                              // Output NI calculator
+    // output logic [SIZED-1:0] o_rd_r8,                              // Output RD calculator   
+    // output logic             o_ready_ni_rd_8,                      // Ready signal for updating ni_rd histogram             
+
+    /////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST FOR NI RD HISTOGRAM               ///////
+    /////////////////////////////////////////////////////////////////////////////
+    output logic [FIXED-1:0]  o_rdata_ni_r2, o_rdata_rd_r2,        // NI, RD read data from R2
+    output logic [FIXED-1:0]  o_rdata_ni_r4, o_rdata_rd_r4,        // NI, RD read data from R4
+    output logic [FIXED-1:0]  o_rdata_ni_r6, o_rdata_rd_r6,        // NI, RD read data from R6
+    output logic [FIXED-1:0]  o_rdata_ni_r8, o_rdata_rd_r8,        // NI, RD read data from R8
+
+    ////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT FOR COMBINE VECTOR               ////////
+    ////////////////////////////////////////////////////////////////////////
+    output logic [23:0]      o_ci0,                               // Output CI_0
+    output logic [23:0]      o_ci1,                               // Output CI_1
+    output logic [SIZED:0]   o_ni_addr,                           // Output NI address
+    output logic [SIZED:0]   o_rd_addr,                           // Output RD address
+
+    //////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST FOR LUT               ////////
+    //////////////////////////////////////////////////////////////////
+    // output logic [FIXED-1:0]      o_lut_ni_2,                         // Output LUT NI 2
+    // output logic [FIXED-1:0]      o_lut_rd_2,                         // Output LUT RD 2
+    // output logic [FIXED-1:0]      o_lut_ni_4,                         // Output LUT NI 4
+    // output logic [FIXED-1:0]      o_lut_rd_4,                         // Output LUT RD 4
+    // output logic [FIXED-1:0]      o_lut_ni_6,                         // Output LUT NI 6
+    // output logic [FIXED-1:0]      o_lut_rd_6,                         // Output LUT RD 6
+    // output logic [FIXED-1:0]      o_lut_ni_8,                         // Output LUT NI 8
+    // output logic [FIXED-1:0]      o_lut_rd_8,                         // Output LUT RD 8
+
+    //////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST FOR DENSE LAYER               ////////
+    //////////////////////////////////////////////////////////////////////////
+    output logic                  o_done_layer,                       // Done signal for dense layer
+    
+    // output logic [55:0]          o_dense_ni_r2,                     // Output dense NI r2
+    // output logic [55:0]          o_dense_ni_r4                      // Output dense RD r4
+    // output logic [55:0]          o_dense_ni_r6                      // Output dense NI r6
+    // output logic [55:0]          o_dense_ni_r8                      // Output dense NI r8
+
+    // output logic [55:0]          o_dense_rd_r2,                      // Output dense RD r2
+    // output logic [55:0]          o_dense_rd_r4                      // Output dense RD r4
+    // output logic [55:0]          o_dense_rd_r6,                      // Output dense RD r6
+    // output logic [55:0]          o_dense_rd_r8                       // Output dense RD r8
+    output logic [59:0]             o_dense_layer, 
+    output logic [4:0]              o_classi
 );
 
     ////////////////////////////////////////////////////////
@@ -115,23 +184,35 @@ module MRELBP #(
     logic [SIZED-1:0] median_3x3;
     logic [SIZED-1:0] median_5x5;
     logic [SIZED-1:0] median_7x7;
-    logic [SIZED-1:0] median_9x9;
-
-    // Output read_bram_3x3, read_bram_5x5
-    logic [SIZED-1:0] rdata_bram_3x3; 
-    logic [SIZED-1:0] rdata_bram_5x5; 
-    logic [SIZED-1:0] rdata_bram_7x7; 
-    logic [SIZED-1:0] rdata_bram_9x9; 
+    logic [SIZED-1:0] median_9x9; 
  
-    // Read and write address automatic
+    // Read and write address automatic + ready signal;
+    // R2
     logic [5:0] addr_next_3x3_bram, addr_cur_3x3_bram; 
-    logic [6:0] addr_next_5x5_bram, addr_cur_5x5_bram; 
+    logic       ready_r2, ready_r2_hold;
+
+    // R4
+    logic [6:0] addr_next_5x5_bram, addr_cur_5x5_bram;
+    logic       ready_r4, ready_r4_hold;
+
+    // R6 
     logic [8:0] addr_next_7x7_bram, addr_cur_7x7_bram;
+    logic       ready_r6;
+
+    // R8
     logic [8:0] addr_next_9x9_bram, addr_cur_9x9_bram; 
+    logic       ready_r8;
 
     // Value hold output for CI_2, CI_4, CI_6, CI_8
     logic [SIZED-1:0] output_49_value_hold [48:0]; 
-    logic [48:0] ci_2, ci_4, ci_6, ci_8;
+    logic [24:0] ci_2;
+    logic [48:0] ci_4, ci_6, ci_8;
+
+    // Histogram in ci
+    logic [23:0] rdata_0_r2, rdata_1_r2;
+    logic [23:0] rdata_0_r4, rdata_1_r4;  
+    logic [23:0] rdata_0_r6, rdata_1_r6;
+    logic [23:0] rdata_0_r8, rdata_1_r8;  
 
     // Output of test interpolation
     // r=2
@@ -140,18 +221,21 @@ module MRELBP #(
     logic [FIXED-1:0]  q_ne_odd_r2  [3:0]; 
 
     // r=4
+    logic              ni_rd4_ready;
     logic [4:0]        r_addr_hold; 
     logic [SIZED-1:0]  output_21_value_hold_r4 [20:0]; 
     logic [SIZED-1:0]  q_ne_even_r4 [3:0]; 
     logic [FIXED-1:0]  q_ne_odd_r4  [3:0];
 
     // r=6 
+    logic              ni_rd6_ready;
     logic [4:0]        r_addr_hold_r6; 
     logic [SIZED-1:0]  output_21_value_hold_r6 [20:0]; 
     logic [SIZED-1:0]  q_ne_even_r6 [3:0]; 
     logic [FIXED-1:0]  q_ne_odd_r6  [3:0];
 
     // r=8
+    logic              ni_rd8_ready; 
     logic [4:0]        r_addr_hold_r8; 
     logic [SIZED-1:0]  output_21_value_hold_r8 [20:0]; 
     logic [SIZED-1:0]  q_ne_even_r8 [3:0]; 
@@ -177,6 +261,17 @@ module MRELBP #(
     logic [SIZED-1:0]  rd_r8, rd_r8_hold; 
     logic [FIXED-1:0]  average_r8; 
 
+
+    // NI RD histogram
+    logic ni_rd_wren_r2; 
+    logic ni_rd_wren_r4; 
+    logic ni_rd_wren_r6; 
+    logic ni_rd_wren_r8; 
+
+    logic [FIXED-1:0] rdata_ni_r2, rdata_rd_r2; 
+    logic [FIXED-1:0] rdata_ni_r4, rdata_rd_r4; 
+    logic [FIXED-1:0] rdata_ni_r6, rdata_rd_r6; 
+    logic [FIXED-1:0] rdata_ni_r8, rdata_rd_r8; 
 
     //////////////////////////////////////////////////////////
     ///////                 INPUT BRAM                 /////// 
@@ -479,6 +574,10 @@ module MRELBP #(
     ////////////////////////////////////////////////////////////
     ///////                 BRAM FOR 3x3                 /////// 
     ////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
+    ///////                 ADDRESS CALCULATE                 /////// 
+    /////////////////////////////////////////////////////////////////
     // Read and write address automatic
     always_ff @(posedge i_clk or posedge enable_3x3) begin
         if (enable_3x3) begin
@@ -488,36 +587,72 @@ module MRELBP #(
     
     // Addr calculator
     always @(*) begin
+        // Enable_3x3 = 1 => check addr_cur_3x3_bram to run next addr.
+        //                => assert ready_r2 = 1 in 1 clock at address 40
+        //                => assert ready_r4 = 1 in 1 clock at address 48
+        // Enable_3x3 = 0 => hold the value addr_cur_3x3_bram.
+        //                => assert ready_r2 = 0.
+        //                => assert ready_r4 = 0. 
         if (enable_3x3) begin
-            if (addr_cur_3x3_bram != 48)
+            // Address add automatically condition
+            if (addr_cur_3x3_bram != 48) begin
                 addr_next_3x3_bram = addr_cur_3x3_bram + 6'd1;
-            else
+            end else begin
                 addr_next_3x3_bram = 6'd0;
+            end 
+
+            // Ready_r2 condition
+            if (addr_cur_3x3_bram == 6'd40) begin
+                ready_r2 = 1'b1; 
+            end else begin
+                ready_r2 = 1'b0;
+            end 
+
+            // Ready_r4_6_8 condition
+            if (addr_cur_3x3_bram == 6'd48) begin
+                ready_r4  = 1'b1;
+            end else begin
+                ready_r4  = 1'b0;
+            end
         end else begin
+            // Hold addr_cur_3x3_bram + reset ready_r2
             addr_next_3x3_bram = addr_cur_3x3_bram; 
+            ready_r2           = 1'b0; 
+            ready_r4           = 1'b0;
         end
     end
 
-    bram_3x3 #(
-        .WIDTH                  (SIZED), 
-        .FILTER                 (3)
+    // Hold ready_r4 1 clock; 
+    always_ff @( posedge i_clk ) begin
+        ready_r2_hold <= ready_r2; 
+        ready_r4_hold <= ready_r4; 
+    end
+
+    assign ready_r6 = ready_r4_hold; 
+    assign ready_r8 = ready_r4_hold; 
+
+    ///////////////////////////////////////////////////////////
+    ///////                 STORE VALUE                 /////// 
+    ///////////////////////////////////////////////////////////
+    hold_value #(
+        .WIDTH                  (SIZED),
+        .SIZE                   (49)
     )bram_median_3x3_result(
-        // Global clock 
         .i_clk                  (i_clk), 
-        // Write enable         
-        .i_wren                 (enable_3x3), 
-        // Read and write address
-        .i_waddr                (addr_next_3x3_bram), 
-        .i_raddr                (addr_next_3x3_bram), 
-        // Data write 
+        .i_rst                  (i_rst), 
+        .i_enable               (addr_next_3x3_bram), 
         .i_din                  (median_3x3), 
-        // Data read
-        .o_dout                 (rdata_bram_3x3)
+
+        .o_dout                 (output_49_value_hold)
     );
 
     ////////////////////////////////////////////////////////////
     ///////                 BRAM FOR 5x5                 /////// 
     ////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
+    ///////                 ADDRESS CALCULATE                 /////// 
+    /////////////////////////////////////////////////////////////////
     // Read and write address automatic
     always_ff @(posedge i_clk or posedge enable_5x5) begin
         if (enable_5x5) begin
@@ -537,26 +672,68 @@ module MRELBP #(
         end
     end
 
-    bram_5x5 #(
-        .WIDTH                  (SIZED), 
-        .FILTER                 (5)
-    )bram_median_5x5_result(
-        // Global clock 
+    // Ready singal 
+    always_ff @( posedge i_clk or posedge i_rst ) begin
+        if (i_rst) begin
+            ni_rd4_ready <= 1'b0; 
+        end else begin
+            if (addr_cur_5x5_bram == 87 & enable_5x5) begin
+                ni_rd4_ready <= 1'b1; 
+            end else begin
+                ni_rd4_ready <= 1'b0; 
+            end
+        end
+    end
+
+    // Convert the address
+    always_comb begin
+        case (addr_next_5x5_bram)
+        'd4 /*-'d1*/:       r_addr_hold = 'd0; 
+        'd6 /*-'d1*/:       r_addr_hold = 'd1; 
+        'd7 /*-'d1*/:       r_addr_hold = 'd2; 
+        'd11/*-'d1*/:       r_addr_hold = 'd3; 
+        'd12/*-'d1*/:       r_addr_hold = 'd4; 
+        'd20/*-'d1*/:       r_addr_hold = 'd5;
+        'd31/*-'d1*/:       r_addr_hold = 'd6; 
+        'd32/*-'d1*/:       r_addr_hold = 'd7; 
+        'd36/*-'d1*/:       r_addr_hold = 'd8;
+        'd37/*-'d1*/:       r_addr_hold = 'd9; 
+        'd48/*-'d1*/:       r_addr_hold = 'd10; 
+        'd56/*-'d1*/:       r_addr_hold = 'd11; 
+        'd57/*-'d1*/:       r_addr_hold = 'd12;
+        'd61/*-'d1*/:       r_addr_hold = 'd13; 
+        'd62/*-'d1*/:       r_addr_hold = 'd14;
+        'd69/*-'d1*/:       r_addr_hold = 'd15; 
+        'd81/*-'d1*/:       r_addr_hold = 'd16;
+        'd82/*-'d1*/:       r_addr_hold = 'd17;
+        'd86/*-'d1*/:       r_addr_hold = 'd18;
+        'd87/*-'d1*/:       r_addr_hold = 'd19;
+            default:  r_addr_hold = 'd20;
+        endcase
+    end
+
+    ///////////////////////////////////////////////////////////
+    ///////                 STORE VALUE                 /////// 
+    ///////////////////////////////////////////////////////////
+    hold_value #(
+        .WIDTH                  (SIZED),
+        .SIZE                   (21)     
+    )store_value_of_20_value_of_median_5x5(
         .i_clk                  (i_clk), 
-        // Write enable         
-        .i_wren                 (enable_5x5), 
-        // Read and write address
-        .i_waddr                (addr_next_5x5_bram), 
-        .i_raddr                (addr_next_5x5_bram), 
-        // Data write 
+        .i_rst                  (i_rst), 
+        .i_enable               (r_addr_hold), 
         .i_din                  (median_5x5), 
-        // Data read
-        .o_dout                 (rdata_bram_5x5)
-    ); 
+
+        .o_dout                 (output_21_value_hold_r4)    
+    );
 
     ////////////////////////////////////////////////////////////
     ///////                 BRAM FOR 7x7                 /////// 
     ////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
+    ///////                 ADDRESS CALCULATE                 /////// 
+    /////////////////////////////////////////////////////////////////
     // Hold enable 7x7 signal 1 clock for synthesize data
     always_ff @(posedge i_clk) begin
         enable_7x7_hold <= enable_7x7;
@@ -580,28 +757,68 @@ module MRELBP #(
             addr_next_7x7_bram = addr_cur_7x7_bram; 
         end
     end
-    
-    bram_5x5 #(
-        .WIDTH                  (SIZED), 
-        .FILTER                 (9)
-    )bram_median_7x7_result(
-        // Global clock 
-        .i_clk                  (i_clk), 
-        // Write enable         
-        .i_wren                 (enable_7x7_hold), 
-        // Read and write address
-        .i_waddr                (addr_next_7x7_bram), 
-        .i_raddr                (addr_next_7x7_bram), 
-        // Data write 
-        .i_din                  (median_7x7), 
-        // Data read
-        .o_dout                 (rdata_bram_7x7)
-    ); 
 
+    // Ready singal 
+    always_ff @( posedge i_clk or posedge i_rst ) begin
+        if (i_rst) begin
+            ni_rd6_ready <= 1'b0; 
+        end else begin
+            if (addr_cur_7x7_bram == 'd292 & enable_7x7_hold) begin
+                ni_rd6_ready <= 1'b1; 
+            end else begin
+                ni_rd6_ready <= 1'b0; 
+            end
+        end
+    end
+
+    // Convert address 
+    always_comb begin
+        case (addr_next_7x7_bram)
+        'd27 /*-'d1*/ :    r_addr_hold_r6 = 'd0; 
+        'd28 /*-'d1*/ :    r_addr_hold_r6 = 'd1; 
+        'd30 /*-'d1*/ :    r_addr_hold_r6 = 'd2; 
+        'd31 /*-'d1*/ :    r_addr_hold_r6 = 'd3; 
+        'd44 /*-'d1*/ :    r_addr_hold_r6 = 'd4; 
+        'd90 /*-'d1*/ :    r_addr_hold_r6 = 'd5;
+        'd91 /*-'d1*/ :    r_addr_hold_r6 = 'd6; 
+        'd93 /*-'d1*/ :    r_addr_hold_r6 = 'd7; 
+        'd94 /*-'d1*/ :    r_addr_hold_r6 = 'd8;
+        'd116/*-'d1*/ :    r_addr_hold_r6 = 'd9; 
+        'd188/*-'d1*/ :    r_addr_hold_r6 = 'd10; 
+        'd225/*-'d1*/ :    r_addr_hold_r6 = 'd11; 
+        'd226/*-'d1*/ :    r_addr_hold_r6 = 'd12;
+        'd228/*-'d1*/ :    r_addr_hold_r6 = 'd13; 
+        'd229/*-'d1*/ :    r_addr_hold_r6 = 'd14;
+        'd272/*-'d1*/ :    r_addr_hold_r6 = 'd15; 
+        'd288/*-'d1*/ :    r_addr_hold_r6 = 'd16;
+        'd289/*-'d1*/ :    r_addr_hold_r6 = 'd17;
+        'd291/*-'d1*/ :    r_addr_hold_r6 = 'd18;
+        'd292/*-'d1*/ :    r_addr_hold_r6 = 'd19;
+            default:  r_addr_hold_r6 = 'd20;
+        endcase
+    end
+
+    ///////////////////////////////////////////////////////////
+    ///////                 STORE VALUE                 /////// 
+    ///////////////////////////////////////////////////////////
+    hold_value #(
+        .WIDTH                  (SIZED),
+        .SIZE                   (21)     
+    )store_value_of_20_value_of_median_7x7(
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst),         
+        .i_enable               (r_addr_hold_r6), 
+        .i_din                  (median_7x7), 
+        .o_dout                 (output_21_value_hold_r6)    
+    );
 
     ////////////////////////////////////////////////////////////
     ///////                 BRAM FOR 9x9                 /////// 
     ////////////////////////////////////////////////////////////
+
+    /////////////////////////////////////////////////////////////////
+    ///////                 ADDRESS CALCULATE                 /////// 
+    /////////////////////////////////////////////////////////////////
     // Hold enable 1 clock
     always_ff @(posedge i_clk) begin
         enable_9x9_hold <= enable_9x9; 
@@ -631,38 +848,62 @@ module MRELBP #(
         end
     end
 
-     bram_5x5 #(
-        .WIDTH                  (SIZED), 
-        .FILTER                 (9)
-    )bram_median_9x9_result(
-        // Global clock 
+    // Ready singal 
+    always_ff @( posedge i_clk or posedge i_rst ) begin
+        if (i_rst) begin
+            ni_rd8_ready <= 1'b0; 
+        end else begin
+            if (addr_cur_9x9_bram == 'd301 & enable_9x9_hold_1) begin
+                ni_rd8_ready <= 1'b1; 
+            end else begin
+                ni_rd8_ready <= 1'b0; 
+            end
+        end
+    end
+
+    // Convert the address from bram
+    always_comb begin
+        case (addr_next_9x9_bram)
+        'd16 /*-'d1*/ :    r_addr_hold_r8 = 'd0; 
+        'd17 /*-'d1*/ :    r_addr_hold_r8 = 'd1; 
+        'd18 /*-'d1*/ :    r_addr_hold_r8 = 'd2; 
+        'd19 /*-'d1*/ :    r_addr_hold_r8 = 'd3; 
+        'd40 /*-'d1*/ :    r_addr_hold_r8 = 'd4; 
+        'd84 /*-'d1*/ :    r_addr_hold_r8 = 'd5;
+        'd85 /*-'d1*/ :    r_addr_hold_r8 = 'd6; 
+        'd86 /*-'d1*/ :    r_addr_hold_r8 = 'd7; 
+        'd87 /*-'d1*/ :    r_addr_hold_r8 = 'd8;
+        'd120/*-'d1*/ :    r_addr_hold_r8 = 'd9; 
+        'd200/*-'d1*/ :    r_addr_hold_r8 = 'd10; 
+        'd222/*-'d1*/ :    r_addr_hold_r8 = 'd11; 
+        'd223/*-'d1*/ :    r_addr_hold_r8 = 'd12;
+        'd232/*-'d1*/ :    r_addr_hold_r8 = 'd13; 
+        'd233/*-'d1*/ :    r_addr_hold_r8 = 'd14;
+        'd280/*-'d1*/ :    r_addr_hold_r8 = 'd15; 
+        'd290/*-'d1*/ :    r_addr_hold_r8 = 'd16;
+        'd291/*-'d1*/ :    r_addr_hold_r8 = 'd17;
+        'd300/*-'d1*/ :    r_addr_hold_r8 = 'd18;
+        'd301/*-'d1*/ :    r_addr_hold_r8 = 'd19;
+            default:  r_addr_hold_r8 = 'd20;
+        endcase
+    end
+
+    ///////////////////////////////////////////////////////////
+    ///////                 STORE VALUE                 /////// 
+    ///////////////////////////////////////////////////////////
+    hold_value #(
+        .WIDTH                  (SIZED),
+        .SIZE                   (21)     
+    )store_value_of_20_value_of_median_9x9(
         .i_clk                  (i_clk), 
-        // Write enable         
-        .i_wren                 (enable_9x9_hold_1), 
-        // Read and write address
-        .i_waddr                (addr_next_9x9_bram), 
-        .i_raddr                (addr_next_9x9_bram), 
-        // Data write 
+        .i_rst                  (i_rst),         
+        .i_enable               (r_addr_hold_r8), 
         .i_din                  (median_9x9), 
-        // Data read
-        .o_dout                 (rdata_bram_9x9)
-    ); 
+        .o_dout                 (output_21_value_hold_r8)  
+    );
     /////////////////////////////////////////////////////////////
     ///////                 CI CALCULATOR                 /////// 
     /////////////////////////////////////////////////////////////
-
-    // hold value for 3x3
-    hold_value #(
-        .WIDTH                  (SIZED),
-        .SIZE                   (49)     
-    )store_value_of_49_value_of_median_3x3(
-        // Enable write signal 
-        .i_enable               (addr_cur_3x3_bram), 
-        // Data write
-        .i_din                  (rdata_bram_3x3), 
-        // Output hold value
-        .o_dout                 (output_49_value_hold)    
-    );
 
     ////////////////////////////////////////////////////
     ///////                 CI_2                 /////// 
@@ -1092,6 +1333,72 @@ module MRELBP #(
         .o_ci_66                (ci_8[48]) 
     ); 
 
+    /////////////////////////////////////////////////////////////
+    ///////                 CI HISTORGRAM                 /////// 
+    /////////////////////////////////////////////////////////////
+
+    ///////////////////////////////////////////////////
+    ///////                 R=2                 /////// 
+    ///////////////////////////////////////////////////
+    ci_histogram #(
+        .WIDTH_DATA             (24),
+        .WIDTH_CALULATE         (25)
+    )ci_r2_histogram(
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        .i_wren                 (ready_r2_hold & !i_done_load_data_r2), 
+        .i_din                  (ci_2), 
+
+        .o_rdata_0              (rdata_0_r2), 
+        .o_rdata_1              (rdata_1_r2)
+    ); 
+    ///////////////////////////////////////////////////
+    ///////                 R=4                 /////// 
+    ///////////////////////////////////////////////////
+    ci_histogram #(
+        .WIDTH_DATA             (24),
+        .WIDTH_CALULATE         (49)
+    )ci_r4_histogram(
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        .i_wren                 (ready_r4_hold & !i_done_load_data_r2), 
+        .i_din                  (ci_4), 
+        .o_rdata_0              (rdata_0_r4), 
+        .o_rdata_1              (rdata_1_r4)
+    );
+
+    ///////////////////////////////////////////////////
+    ///////                 R=6                 /////// 
+    ///////////////////////////////////////////////////
+    ci_histogram #(
+        .WIDTH_DATA             (24),
+        .WIDTH_CALULATE         (49)
+    )ci_r6_histogram(
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        .i_wren                 (ready_r6 & !i_done_load_data_r2), 
+        .i_din                  (ci_6), 
+
+        .o_rdata_0              (rdata_0_r6), 
+        .o_rdata_1              (rdata_1_r6)
+    );    
+
+    ///////////////////////////////////////////////////
+    ///////                 R=8                 /////// 
+    ///////////////////////////////////////////////////
+    ci_histogram #(
+        .WIDTH_DATA             (24),
+        .WIDTH_CALULATE         (49)
+    )ci_r8_histogram(
+        .i_clk                  (i_clk), 
+        .i_rst                  (i_rst), 
+        .i_wren                 (ready_r8 & !i_done_load_data_r2), 
+        .i_din                  (ci_8), 
+ 
+        .o_rdata_0              (rdata_0_r8), 
+        .o_rdata_1              (rdata_1_r8)
+    );
+
     ////////////////////////////////////////////////////////////////////////
     ///////                 INTERPOLATION CALCULATOR                 /////// 
     ////////////////////////////////////////////////////////////////////////
@@ -1147,47 +1454,6 @@ module MRELBP #(
     ///////////////////////////////////////////////////
     ///////                 R=4                 /////// 
     ///////////////////////////////////////////////////
-
-    // Convert the address from bram
-    always_comb begin
-        case (addr_cur_5x5_bram)
-        'd4 -'d1:       r_addr_hold = 'd0; 
-        'd6 -'d1:       r_addr_hold = 'd1; 
-        'd7 -'d1:       r_addr_hold = 'd2; 
-        'd11-'d1:       r_addr_hold = 'd3; 
-        'd12-'d1:       r_addr_hold = 'd4; 
-        'd20-'d1:       r_addr_hold = 'd5;
-        'd31-'d1:       r_addr_hold = 'd6; 
-        'd32-'d1:       r_addr_hold = 'd7; 
-        'd36-'d1:       r_addr_hold = 'd8;
-        'd37-'d1:       r_addr_hold = 'd9; 
-        'd48-'d1:       r_addr_hold = 'd10; 
-        'd56-'d1:       r_addr_hold = 'd11; 
-        'd57-'d1:       r_addr_hold = 'd12;
-        'd61-'d1:       r_addr_hold = 'd13; 
-        'd62-'d1:       r_addr_hold = 'd14;
-        'd69-'d1:       r_addr_hold = 'd15; 
-        'd81-'d1:       r_addr_hold = 'd16;
-        'd82-'d1:       r_addr_hold = 'd17;
-        'd86-'d1:       r_addr_hold = 'd18;
-        'd87-'d1:       r_addr_hold = 'd19;
-            default:  r_addr_hold = 'd20;
-        endcase
-    end
-
-    // Hold value for calculate
-    hold_value #(
-        .WIDTH                  (SIZED),
-        .SIZE                   (21)     
-    )store_value_of_20_value_of_median_5x5(
-        // Enable write signal 
-        .i_enable               (r_addr_hold), 
-        // Data write
-        .i_din                  (rdata_bram_5x5), 
-        // Output hold value
-        .o_dout                 (output_21_value_hold_r4)    
-    );
-
     interpolation_4 #(
         .WIDTH                  (SIZED), 
         .FIXED                  (FIXED)
@@ -1218,7 +1484,6 @@ module MRELBP #(
         .o_q_ne_2               (q_ne_even_r4[1]), 
         .o_q_ne_4               (q_ne_even_r4[2]), 
         .o_q_ne_6               (q_ne_even_r4[3]),
-
         .o_q_ne_1               (q_ne_odd_r4[0]), 
         .o_q_ne_3               (q_ne_odd_r4[1]), 
         .o_q_ne_5               (q_ne_odd_r4[2]), 
@@ -1228,47 +1493,6 @@ module MRELBP #(
     ///////////////////////////////////////////////////
     ///////                 R=6                 /////// 
     ///////////////////////////////////////////////////
-
-    // Convert the address from bram
-    always_comb begin
-        case (addr_cur_7x7_bram)
-        'd27 -'d1 :    r_addr_hold_r6 = 'd0; 
-        'd28 -'d1 :    r_addr_hold_r6 = 'd1; 
-        'd30 -'d1 :    r_addr_hold_r6 = 'd2; 
-        'd31 -'d1 :    r_addr_hold_r6 = 'd3; 
-        'd44 -'d1 :    r_addr_hold_r6 = 'd4; 
-        'd90 -'d1 :    r_addr_hold_r6 = 'd5;
-        'd91 -'d1 :    r_addr_hold_r6 = 'd6; 
-        'd93 -'d1 :    r_addr_hold_r6 = 'd7; 
-        'd94 -'d1 :    r_addr_hold_r6 = 'd8;
-        'd116-'d1 :    r_addr_hold_r6 = 'd9; 
-        'd188-'d1 :    r_addr_hold_r6 = 'd10; 
-        'd225-'d1 :    r_addr_hold_r6 = 'd11; 
-        'd226-'d1 :    r_addr_hold_r6 = 'd12;
-        'd228-'d1 :    r_addr_hold_r6 = 'd13; 
-        'd229-'d1 :    r_addr_hold_r6 = 'd14;
-        'd272-'d1 :    r_addr_hold_r6 = 'd15; 
-        'd288-'d1 :    r_addr_hold_r6 = 'd16;
-        'd289-'d1 :    r_addr_hold_r6 = 'd17;
-        'd291-'d1 :    r_addr_hold_r6 = 'd18;
-        'd292-'d1 :    r_addr_hold_r6 = 'd19;
-            default:  r_addr_hold_r6 = 'd20;
-        endcase
-    end
-
-    // Hold value for calculate
-    hold_value #(
-        .WIDTH                  (SIZED),
-        .SIZE                   (21)     
-    )store_value_of_20_value_of_median_7x7(
-        // Enable write signal 
-        .i_enable               (r_addr_hold_r6), 
-        // Data write
-        .i_din                  (rdata_bram_7x7), 
-        // Output hold value
-        .o_dout                 (output_21_value_hold_r6)    
-    );
-
     // Interpolation
     interpolation_6 #(
         .WIDTH                  (SIZED), 
@@ -1309,47 +1533,6 @@ module MRELBP #(
     ///////////////////////////////////////////////////
     ///////                 R=8                 /////// 
     ///////////////////////////////////////////////////
-
-    // Convert the address from bram
-    always_comb begin
-        case (addr_cur_9x9_bram)
-        'd16 -'d1 :    r_addr_hold_r8 = 'd0; 
-        'd17 -'d1 :    r_addr_hold_r8 = 'd1; 
-        'd18 -'d1 :    r_addr_hold_r8 = 'd2; 
-        'd19 -'d1 :    r_addr_hold_r8 = 'd3; 
-        'd40 -'d1 :    r_addr_hold_r8 = 'd4; 
-        'd84 -'d1 :    r_addr_hold_r8 = 'd5;
-        'd85 -'d1 :    r_addr_hold_r8 = 'd6; 
-        'd86 -'d1 :    r_addr_hold_r8 = 'd7; 
-        'd87 -'d1 :    r_addr_hold_r8 = 'd8;
-        'd120-'d1 :    r_addr_hold_r8 = 'd9; 
-        'd200-'d1 :    r_addr_hold_r8 = 'd10; 
-        'd222-'d1 :    r_addr_hold_r8 = 'd11; 
-        'd223-'d1 :    r_addr_hold_r8 = 'd12;
-        'd232-'d1 :    r_addr_hold_r8 = 'd13; 
-        'd233-'d1 :    r_addr_hold_r8 = 'd14;
-        'd280-'d1 :    r_addr_hold_r8 = 'd15; 
-        'd290-'d1 :    r_addr_hold_r8 = 'd16;
-        'd291-'d1 :    r_addr_hold_r8 = 'd17;
-        'd300-'d1 :    r_addr_hold_r8 = 'd18;
-        'd301-'d1 :    r_addr_hold_r8 = 'd19;
-            default:  r_addr_hold_r8 = 'd20;
-        endcase
-    end
-
-    // Hold value for calculate
-    hold_value #(
-        .WIDTH                  (SIZED),
-        .SIZE                   (21)     
-    )store_value_of_20_value_of_median_9x9(
-        // Enable write signal 
-        .i_enable               (r_addr_hold_r8), 
-        // Data write
-        .i_din                  (rdata_bram_9x9), 
-        // Output hold value
-        .o_dout                 (output_21_value_hold_r8)    
-    );
-
     interpolation_8 #(
         .WIDTH                  (SIZED), 
         .FIXED                  (FIXED)
@@ -1415,7 +1598,7 @@ module MRELBP #(
 
     // Hold 1 clock
     always_ff @(posedge i_clk) begin
-        if (addr_cur_3x3_bram == 40) begin
+        if (ready_r2_hold) begin
             ni_r2_hold <= ni_r2; 
             rd_r2_hold <= rd_r2; 
         end 
@@ -1454,7 +1637,7 @@ module MRELBP #(
 
     // Hold 1 clock 
     always_ff @(posedge i_clk) begin
-        if (addr_cur_5x5_bram == 87) begin
+        if (ni_rd4_ready) begin
             ni_r4_hold <= ni_r4; 
             rd_r4_hold <= rd_r4; 
         end 
@@ -1493,7 +1676,7 @@ module MRELBP #(
 
     // Hold 1 clock 
     always_ff @(posedge i_clk) begin
-        if (addr_cur_7x7_bram == 292) begin
+        if (ni_rd6_ready) begin
             ni_r6_hold <= ni_r6; 
             rd_r6_hold <= rd_r6; 
         end 
@@ -1531,11 +1714,327 @@ module MRELBP #(
 
     // Hold 1 clock 
     always_ff @(posedge i_clk) begin
-        if (addr_cur_9x9_bram == 301) begin
+        if (ni_rd8_ready) begin
             ni_r8_hold <= ni_r8; 
             rd_r8_hold <= rd_r8; 
         end 
     end
+
+    ///////////////////////////////////////////////////////////////
+    ///////                 NI RD HISTOGRAM                 /////// 
+    ///////////////////////////////////////////////////////////////
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///////                 HOLD READY SIGNAL FOR SYNCHROUNOUS WITH OUTPUT NI_RD                 /////// 
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
+    always_ff @( posedge i_clk ) begin
+        ni_rd_wren_r2 <= ready_r2_hold;
+        ni_rd_wren_r4 <= ni_rd4_ready;
+        ni_rd_wren_r6 <= ni_rd6_ready;
+        ni_rd_wren_r8 <= ni_rd8_ready;
+    end
+
+    ///////////////////////////////////////////////////////////////
+    ///////                 RAM FOR STORAGE                 /////// 
+    ///////////////////////////////////////////////////////////////
+
+    logic [7:0] addr_ni_r2, addr_ni_r4, addr_ni_r6, addr_ni_r8;
+    logic [7:0] addr_rd_r2, addr_rd_r4, addr_rd_r6, addr_rd_r8;
+
+    logic [8:0] r_addr_ni, r_addr_rd;
+
+    //////////////////////////////////////////////////////////////////////////////
+    ///////                 GEN READ ADDR FOR COMBINE TASK                 ///////
+    //////////////////////////////////////////////////////////////////////////////
+    
+    assign addr_ni_r2 = (i_done_load_data_r8) ? r_addr_ni[7:0] : ni_r2_hold;
+    assign addr_rd_r2 = (i_done_load_data_r8) ? r_addr_rd[7:0] : rd_r2_hold;
+	 
+    assign addr_ni_r4 = (i_done_load_data_r8) ? r_addr_ni[7:0] : ni_r4_hold;
+    assign addr_rd_r4 = (i_done_load_data_r8) ? r_addr_rd[7:0] : rd_r4_hold;
+	 
+    assign addr_ni_r6 = (i_done_load_data_r8) ? r_addr_ni[7:0] : ni_r6_hold;
+    assign addr_rd_r6 = (i_done_load_data_r8) ? r_addr_rd[7:0] : rd_r6_hold;
+	 
+    assign addr_ni_r8 = (i_done_load_data_r8) ? r_addr_ni[7:0] : ni_r8_hold;
+    assign addr_rd_r8 = (i_done_load_data_r8) ? r_addr_rd[7:0] : rd_r8_hold;
+
+    always_ff @(posedge i_clk or posedge i_rst) begin
+        if (i_rst) begin
+            r_addr_ni <= 9'd0;
+            r_addr_rd <= 9'd0;
+        end else begin
+            if (i_done_load_data_r8 && !r_addr_ni[8] && !r_addr_rd[8]) begin
+                r_addr_ni <= r_addr_ni + 9'b1;
+                r_addr_rd <= r_addr_rd + 9'b1;
+            end
+        end
+    end
+
+    ni_rd_histogram #(
+        .WIDTH                      (SIZED),
+        .DEPTH                      (256)
+    )ram_ni_rd_2(
+        .i_clk                      (i_clk),           
+        .i_update_enable            (ni_rd_wren_r2), 
+        .i_ni_result                (addr_ni_r2), //ni_r2_hold),
+        .i_rd_result                (addr_rd_r2), //rd_r2_hold),
+
+        .o_ni_read                  (rdata_ni_r2), 
+        .o_rd_read                  (rdata_rd_r2) 
+    );  
+
+    ni_rd_histogram #(
+        .WIDTH                      (SIZED),
+        .DEPTH                      (256)
+    )ram_ni_rd_4(
+        .i_clk                      (i_clk),           
+        .i_update_enable            (ni_rd_wren_r4 & !i_done_load_data_r4), 
+        .i_ni_result                (addr_ni_r4), //ni_r4_hold),
+        .i_rd_result                (addr_rd_r4), //rd_r4_hold),
+
+        .o_ni_read                  (rdata_ni_r4), 
+        .o_rd_read                  (rdata_rd_r4) 
+    );
+    
+    ni_rd_histogram #(
+        .WIDTH                      (SIZED),
+        .DEPTH                      (256)
+    )ram_ni_rd_6(
+        .i_clk                      (i_clk),           
+        .i_update_enable            (ni_rd_wren_r6 & !i_done_load_data_r6), 
+        .i_ni_result                (addr_ni_r6), //ni_r6_hold),
+        .i_rd_result                (addr_rd_r6), //rd_r6_hold),
+
+        .o_ni_read                  (rdata_ni_r6), 
+        .o_rd_read                  (rdata_rd_r6) 
+    );  
+
+    ni_rd_histogram #(
+        .WIDTH                      (SIZED),
+        .DEPTH                      (256)
+    )ram_ni_rd_8(
+        .i_clk                      (i_clk),           
+        .i_update_enable            (ni_rd_wren_r8 & !i_done_load_data_r8), 
+        .i_ni_result                (addr_ni_r8), //ni_r8_hold),
+        .i_rd_result                (addr_rd_r8), //rd_r8_hold),
+
+        .o_ni_read                  (rdata_ni_r8), 
+        .o_rd_read                  (rdata_rd_r8) 
+    );  
+
+    logic [FIXED-1:0] weight_ni_r2, weight_rd_r2;
+    logic [FIXED-1:0] weight_ni_r4, weight_rd_r4;
+    logic [FIXED-1:0] weight_ni_r6, weight_rd_r6;
+    logic [FIXED-1:0] weight_ni_r8, weight_rd_r8;
+
+    ///////////////////////////////////////////////////////////////////
+    ///////                 LUT FOR DENSE LAYER                 ///////
+    ///////////////////////////////////////////////////////////////////
+    logic [7:0] r_addr_ni_hold, r_addr_rd_hold;
+
+    always_ff @(posedge i_clk) begin
+        r_addr_ni_hold <= r_addr_ni[7:0]; 
+        r_addr_rd_hold <= r_addr_rd[7:0]; 
+    end
+
+    lut_ni_2 lut_2_n(
+        .i_addr                 (r_addr_ni_hold),
+        .o_dout                 (weight_ni_r2)
+    ); 
+
+    lut_rd_2 lut_2_r(
+        .i_addr                 (r_addr_rd_hold),
+        .o_dout                 (weight_rd_r2)
+    );
+
+    lut_ni_4 lut_4_n(
+        .i_addr                 (r_addr_ni_hold),
+        .o_dout                 (weight_ni_r4)
+    );
+
+    lut_rd_4 lut_4_r(
+        .i_addr                 (r_addr_rd_hold),
+        .o_dout                 (weight_rd_r4)
+    );
+
+    lut_ni_6 lut_6_n(
+        .i_addr                 (r_addr_ni_hold),
+        .o_dout                 (weight_ni_r6)
+    );
+
+    lut_rd_6 lut_6_r(
+        .i_addr                 (r_addr_rd_hold),
+        .o_dout                 (weight_rd_r6)
+    );
+
+    lut_ni_8 lut_8_n(
+        .i_addr                 (r_addr_ni_hold),
+        .o_dout                 (weight_ni_r8)
+    );
+
+    lut_rd_8 lut_8_r(
+        .i_addr                 (r_addr_rd_hold),
+        .o_dout                 (weight_rd_r8)
+    );
+
+    //////////////////////////////////////////////////////////////////////
+    ///////                 DENSE LAYER CALCULATOR                 ///////
+    //////////////////////////////////////////////////////////////////////
+
+    logic hold_start; 
+    logic done_dense_layer; 
+    logic store_1_time = 0;
+
+    logic [23:0] ci_0_total;
+    logic [23:0] ci_1_total;
+
+    logic [55:0] dense_ni_r2;
+    logic [55:0] dense_ni_r4;
+    logic [55:0] dense_ni_r6;
+    logic [55:0] dense_ni_r8;
+
+    logic [55:0] dense_rd_r2;
+    logic [55:0] dense_rd_r4;
+    logic [55:0] dense_rd_r6;   
+    logic [55:0] dense_rd_r8;
+
+    logic [59:0] dense_layer_with_bias;
+
+    always_ff @(posedge i_clk) begin
+        hold_start <= i_done_load_data_r8;
+    end
+
+    dense_layer dense_r2_ni(
+        .i_clk                  (i_clk),
+        .i_rst                  (i_rst),
+        .i_start                (hold_start),
+        .i_ni_rd                (rdata_ni_r2),
+        .i_weight               (weight_ni_r2),
+
+        .o_done                 (),
+        .o_dout                 (dense_ni_r2)
+    );
+
+    dense_layer dense_r2_rd(
+        .i_clk                  (i_clk),
+        .i_rst                  (i_rst),
+        .i_start                (hold_start),
+        .i_ni_rd                (rdata_rd_r2),
+        .i_weight               (weight_rd_r2),
+
+        .o_done                 (),//o_done_layer),
+        .o_dout                 (dense_rd_r2)
+    ); 
+
+    dense_layer dense_r4_ni(
+        .i_clk                  (i_clk),
+        .i_rst                  (i_rst),
+        .i_start                (hold_start),
+        .i_ni_rd                (rdata_ni_r4),
+        .i_weight               (weight_ni_r4),
+
+        .o_done                 (),//o_done_layer),
+        .o_dout                 (dense_ni_r4)
+    );
+
+    dense_layer dense_r4_rd(
+        .i_clk                  (i_clk),
+        .i_rst                  (i_rst),
+        .i_start                (hold_start),
+        .i_ni_rd                (rdata_rd_r4),
+        .i_weight               (weight_rd_r4),
+
+        .o_done                 (),//o_done_layer),
+        .o_dout                 (dense_rd_r4)
+    );
+
+    dense_layer dense_r6_ni(
+        .i_clk                  (i_clk),
+        .i_rst                  (i_rst),
+        .i_start                (hold_start),
+        .i_ni_rd                (rdata_ni_r6),
+        .i_weight               (weight_ni_r6),
+
+        .o_done                 (),//o_done_layer),
+        .o_dout                 (dense_ni_r6)
+    );
+
+    dense_layer dense_r6_rd(
+        .i_clk                  (i_clk),
+        .i_rst                  (i_rst),
+        .i_start                (hold_start),
+        .i_ni_rd                (rdata_rd_r6),
+        .i_weight               (weight_rd_r6),
+
+        .o_done                 (),//o_done_layer),
+        .o_dout                 (dense_rd_r6)
+    );
+
+    dense_layer dense_r8_ni(
+        .i_clk                  (i_clk),
+        .i_rst                  (i_rst),
+        .i_start                (hold_start),
+        .i_ni_rd                (rdata_ni_r8),
+        .i_weight               (weight_ni_r8),
+
+        .o_done                 (),//o_done_layer),
+        .o_dout                 (dense_ni_r8)
+    );
+
+    dense_layer dense_r8_rd(
+        .i_clk                  (i_clk),
+        .i_rst                  (i_rst),
+        .i_start                (hold_start),
+        .i_ni_rd                (rdata_rd_r8),
+        .i_weight               (weight_rd_r8),
+
+        .o_done                 (done_dense_layer),
+        .o_dout                 (dense_rd_r8)
+    );
+
+    always_ff @(posedge i_clk) begin
+        if (i_done_load_data_r2 & !store_1_time) begin
+            ci_0_total <= rdata_0_r2 + rdata_0_r4 + rdata_0_r6 + rdata_0_r8;
+            ci_1_total <= rdata_1_r2 + rdata_1_r4 + rdata_1_r6 + rdata_1_r8;
+            store_1_time <= 1;
+        end
+    end
+
+    logic [55:0] dense_ci_0, dense_ci_1;
+    logic signed [23:0] WEIGHT_CI_0 = 24'h000080, WEIGHT_CI_1 = 24'hFFFF7F;
+    logic [23:0] BIAS = 24'h000000;
+
+    assign dense_ci_0 = $signed({24'd0,ci_0_total}) * WEIGHT_CI_0;
+    assign dense_ci_1 = $signed({24'd0,ci_1_total}) * WEIGHT_CI_1;
+
+    logic done_dense_layer_hold; 
+
+    always_ff @( posedge i_clk or posedge done_dense_layer ) begin
+        if (done_dense_layer) begin
+            dense_layer_with_bias <= {{4{dense_rd_r8[55]}},dense_rd_r8} + {{4{dense_ni_r8[55]}},dense_ni_r8} + 
+                                     {{4{dense_rd_r6[55]}},dense_rd_r6} + {{4{dense_ni_r6[55]}},dense_ni_r6} + 
+                                     {{4{dense_rd_r4[55]}},dense_rd_r4} + {{4{dense_ni_r4[55]}},dense_ni_r4} + 
+                                     {{4{dense_rd_r2[55]}},dense_rd_r2} + {{4{dense_ni_r2[55]}},dense_ni_r2} +
+                                     {{4{dense_ci_0[55]}},dense_ci_0}   + {{4{dense_ci_1[55]}},dense_ci_1}   + 
+                                     {{36{BIAS[23]}},BIAS};
+            done_dense_layer_hold <= done_dense_layer; 
+        end
+    end
+
+    //////////////////////////////////////////////////////////////
+    ///////                 CLASSIFICATION                 /////// 
+    //////////////////////////////////////////////////////////////
+    logic [4:0] classifi_o; 
+    classifi classification(
+        .i_clk      (i_clk),
+        .i_rst      (i_rst),
+        .i_enable   (done_dense_layer_hold),
+        .i_din      (dense_layer_with_bias),
+        .o_dout     (classifi_o)
+    );
+    
+    assign o_classi = classifi_o;
     ////////////////////////////////////////////////////////////////////////////////////
     ///////                 OUTPUT TEST FOR CONTROL + BRAM INPUT                 /////// 
     ////////////////////////////////////////////////////////////////////////////////////
@@ -1556,33 +2055,51 @@ module MRELBP #(
     // assign o_median_3x3 = median_3x3; 
     // assign o_median_5x5 = median_5x5; 
     // assign o_median_7x7 = median_7x7; 
-    assign o_median_9x9 = median_9x9; 
+    // assign o_median_9x9 = median_9x9; 
 
     // assign o_enable_3x3 = enable_3x3; 
     // assign o_enable_5x5 = enable_5x5;  
     // assign o_enable_7x7 = enable_7x7_hold; 
-    assign o_enable_9x9 = enable_9x9_hold_1; 
+    // assign o_enable_9x9 = enable_9x9_hold_1; 
+
+    /////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST FOR CI CALCULATOR                 /////// 
+    /////////////////////////////////////////////////////////////////////////////
+    // assign o_ci_2 = ci_2;
+    // assign o_ci_4 = ci_4; 
+    // assign o_ci_6 = ci_6; 
+    // assign o_ci_8 = ci_8;
+
+    ///////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF CI_2 HISTOGRAM               ///////
+    ///////////////////////////////////////////////////////////////////////////
+    assign o_rdata_r2_0 = rdata_0_r2; 
+    assign o_rdata_r2_1 = rdata_1_r2; 
+    // assign o_ready_r2   = ready_r2_hold; 
+ 
+    assign o_rdata_r4_0 = rdata_0_r4;  
+    assign o_rdata_r4_1 = rdata_1_r4; 
+    assign o_rdata_r6_0 = rdata_0_r6;  
+    assign o_rdata_r6_1 = rdata_1_r6;  
+    assign o_rdata_r8_0 = rdata_0_r8;  
+    assign o_rdata_r8_1 = rdata_1_r8;  
+
+    // assign o_ready_r4_6_8 = ready_r4_hold; 
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ///////                 OUTPUT TEST FOR VALUE HOLD BRAM MEDIAN RESULT 3X3 + TEST CURRENT ADDRESS FOR HOLD                 /////// 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Test addr
-    // assign o_addr_3x3 = addr_cur_3x3_bram; 
-    // assign o_addr_5x5 = addr_cur_5x5_bram; 
-    // assign o_addr_7x7 = addr_cur_7x7_bram; 
-    assign o_addr_9x9 = addr_cur_9x9_bram; 
-
-    // Data read of bram
-    // assign o_bram_3x3 = rdata_bram_3x3; 
-    // assign o_bram_5x5 = rdata_bram_5x5; 
-    // assign o_bram_7x7 = rdata_bram_7x7; 
-    assign o_bram_9x9 = rdata_bram_9x9;
+    // assign o_addr_3x3 = addr_next_3x3_bram; 
+    // assign o_addr_5x5 = addr_next_5x5_bram; 
+    // assign o_addr_7x7 = addr_next_7x7_bram; 
+    // assign o_addr_9x9 = addr_next_9x9_bram; 
 
     // Test for hold value for bram 3x3
     // generate
-    //     for (i=0; i<49; i=i+1) begin: assign_to_test_output_2
-    //         assign o_hold_value_for_ci[i] = output_49_value_hold[i]; 
-    //     end
+        // for (i=0; i<49; i=i+1) begin: assign_to_test_output_2
+            // assign o_hold_value_for_ci[i] = output_49_value_hold[i]; 
+        // end
     // endgenerate
 
     // Test for hold value for bram 5x5
@@ -1600,11 +2117,11 @@ module MRELBP #(
     // endgenerate
 
     // Test for hold value for bram 9x9
-    generate 
-        for (i=0; i<21; i=i+1) begin : assign_to_test_output_8
-            assign o_hold_value[i] = output_21_value_hold_r8[i]; 
-        end
-    endgenerate
+    // generate 
+        // for (i=0; i<21; i=i+1) begin : assign_to_test_output_8
+            // assign o_hold_value[i] = output_21_value_hold_r8[i]; 
+        // end
+    // endgenerate
     /////////////////////////////////////////////////////////////////////////////
     ///////                 OUTPUT TEST FOR INTERPOLATION                 /////// 
     /////////////////////////////////////////////////////////////////////////////
@@ -1657,18 +2174,75 @@ module MRELBP #(
     // assign o_ni_r2 = ni_r2_hold; 
     // assign o_rd_r2 = rd_r2_hold;     
 
-    // R4 
-    // assign o_average_r4 = average_r4; 
-    // assign o_ni_r4 = ni_r4_hold; 
-    // assign o_rd_r4 = rd_r4_hold;     
+    // // R4 
+    // // assign o_average_r4 = average_r4; 
+    // assign o_ni_r4         = ni_r4_hold; 
+    // assign o_rd_r4         = rd_r4_hold;     
+    // assign o_ready_ni_rd_4 = ni_rd4_ready; 
 
-    // R6
-    // assign o_average_r6 = average_r6; 
-    // assign o_ni_r6 = ni_r6_hold; 
-    // assign o_rd_r6 = rd_r6_hold;       
+    // // R6
+    // // assign o_average_r6 = average_r6; 
+    // assign o_ni_r6         = ni_r6_hold; 
+    // assign o_rd_r6         = rd_r6_hold;       
+    // assign o_ready_ni_rd_6 = ni_rd6_ready; 
 
-    // R6
-    // assign o_average_r8 = average_r8; 
+    // // R6
+    // // assign o_average_r8 = average_r8; 
     // assign o_ni_r8 = ni_r8_hold; 
     // assign o_rd_r8 = rd_r8_hold;       
+    // assign o_ready_ni_rd_8 = ni_rd8_ready; 
+
+    //////////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT TEST OF NI + RD HISTOGRAM               ///////
+    //////////////////////////////////////////////////////////////////////////////
+    // R2
+    assign o_rdata_ni_r2 = rdata_ni_r2; 
+    assign o_rdata_rd_r2 = rdata_rd_r2; 
+    // R4
+    assign o_rdata_ni_r4 = rdata_ni_r4; 
+    assign o_rdata_rd_r4 = rdata_rd_r4;
+    // R6
+    assign o_rdata_ni_r6 = rdata_ni_r6; 
+    assign o_rdata_rd_r6 = rdata_rd_r6;
+    // R8
+    assign o_rdata_ni_r8 = rdata_ni_r8; 
+    assign o_rdata_rd_r8 = rdata_rd_r8; 
+
+    ////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT FOR COMBINE VECTOR               ////////
+    ////////////////////////////////////////////////////////////////////////
+
+    assign o_ci0 = ci_0_total;
+    assign o_ci1 = ci_1_total;
+
+    assign o_ni_addr = r_addr_ni;
+    assign o_rd_addr = r_addr_rd;
+
+    /////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT FOR LUT WEIGHT                 ///////
+    /////////////////////////////////////////////////////////////////////
+    // assign o_lut_ni_2 = weight_ni_r2;
+    // assign o_lut_rd_2 = weight_rd_r2;
+    // assign o_lut_ni_4 = weight_ni_r4;
+    // assign o_lut_rd_4 = weight_rd_r4;
+    // assign o_lut_ni_6 = weight_ni_r6;
+    // assign o_lut_rd_6 = weight_rd_r6;
+    // assign o_lut_ni_8 = weight_ni_r8;
+    // assign o_lut_rd_8 = weight_rd_r8;
+
+    ////////////////////////////////////////////////////////////////////////
+    ///////                 OUTPUT FOR DENSE LAYER                 /////////
+    ////////////////////////////////////////////////////////////////////////
+    // assign o_dense_ni_r2 = dense_ni_r2;
+    // assign o_dense_ni_r4 = dense_ni_r4;
+    // assign o_dense_ni_r6 = dense_ni_r6;
+    // assign o_dense_ni_r8 = dense_ni_r8;
+
+    // assign o_dense_rd_r2 = dense_rd_r2;
+    // assign o_dense_rd_r4 = dense_rd_r4;
+    // assign o_dense_rd_r6 = dense_rd_r6;
+    // assign o_dense_rd_r8 = dense_rd_r8;
+    assign o_dense_layer = dense_layer_with_bias;
+
+    assign o_done_layer = done_dense_layer; 
 endmodule
